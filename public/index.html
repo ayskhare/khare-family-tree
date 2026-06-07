@@ -1,1 +1,764 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Khare Family Tree | खरे परिवार</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #fdf6ee;
+    color: #2c1810;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* Header */
+  #header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: linear-gradient(135deg, #8B2E00, #C0622A);
+    color: white;
+    padding: 12px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  #header h1 { font-size: 1.2rem; font-weight: 700; }
+  #header p  { font-size: 0.75rem; opacity: 0.85; }
+
+  /* Controls */
+  #controls {
+    display: flex; gap: 8px; align-items: center;
+  }
+  #controls button {
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.4);
+    color: white; border-radius: 6px;
+    padding: 6px 12px; cursor: pointer; font-size: 0.85rem;
+  }
+  #controls button:hover { background: rgba(255,255,255,0.35); }
+
+  /* Search */
+  #search-box {
+    padding: 6px 12px; border-radius: 20px;
+    border: none; outline: none;
+    font-size: 0.85rem; width: 180px;
+  }
+
+  /* Legend */
+  #legend {
+    display: flex; gap: 14px; align-items: center; font-size: 0.75rem;
+  }
+  .legend-dot {
+    width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 4px;
+  }
+
+  /* Canvas */
+  #canvas-wrap {
+    position: fixed; top: 56px; left: 0; right: 0; bottom: 0;
+    overflow: hidden; cursor: grab;
+  }
+  #canvas-wrap:active { cursor: grabbing; }
+  #tree-svg { display: block; }
+
+  /* Loading */
+  #loading {
+    position: fixed; inset: 0; background: #fdf6ee;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; z-index: 200;
+  }
+  .spinner {
+    width: 48px; height: 48px;
+    border: 5px solid #C0622A33;
+    border-top-color: #C0622A;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Tooltip */
+  #tooltip {
+    position: fixed;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 12px 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    max-width: 260px;
+    font-size: 0.85rem;
+    z-index: 300;
+    pointer-events: none;
+    display: none;
+  }
+  #tooltip h3 { font-size: 1rem; color: #8B2E00; margin-bottom: 6px; }
+  #tooltip p  { color: #555; line-height: 1.5; margin-bottom: 2px; }
+
+  /* Modal */
+  #modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    z-index: 400; display: none; align-items: center; justify-content: center;
+  }
+  #modal-overlay.open { display: flex; }
+  #modal {
+    background: white; border-radius: 16px;
+    padding: 28px; width: 90%; max-width: 480px;
+    max-height: 85vh; overflow-y: auto;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+  }
+  #modal h2 { color: #8B2E00; font-size: 1.3rem; margin-bottom: 4px; }
+  #modal .subtitle { color: #888; font-size: 0.8rem; margin-bottom: 20px; }
+  .modal-field { margin-bottom: 14px; }
+  .modal-field label { display: block; font-size: 0.8rem; color: #666; margin-bottom: 4px; font-weight: 600; }
+  .modal-field input, .modal-field textarea, .modal-field select {
+    width: 100%; padding: 8px 12px;
+    border: 1px solid #ddd; border-radius: 8px;
+    font-size: 0.9rem; outline: none;
+    font-family: inherit;
+  }
+  .modal-field input:focus, .modal-field textarea:focus {
+    border-color: #C0622A;
+  }
+  .modal-tabs { display: flex; gap: 0; margin-bottom: 20px; border-bottom: 2px solid #eee; }
+  .modal-tab {
+    padding: 8px 16px; cursor: pointer; font-size: 0.85rem;
+    border-bottom: 2px solid transparent; margin-bottom: -2px;
+    color: #888;
+  }
+  .modal-tab.active { color: #8B2E00; border-bottom-color: #8B2E00; font-weight: 600; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  .btn-submit {
+    background: #8B2E00; color: white;
+    border: none; border-radius: 8px;
+    padding: 10px 24px; cursor: pointer;
+    font-size: 0.9rem; width: 100%; margin-top: 8px;
+  }
+  .btn-submit:hover { background: #C0622A; }
+  .btn-close {
+    float: right; background: none; border: none;
+    font-size: 1.4rem; cursor: pointer; color: #999;
+  }
+  .info-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f0f0f0; }
+  .info-row:last-child { border-bottom: none; }
+  .info-label { color: #888; font-size: 0.82rem; }
+  .info-value { font-size: 0.85rem; font-weight: 500; }
+  .badge {
+    display: inline-block; padding: 2px 8px;
+    border-radius: 12px; font-size: 0.72rem; font-weight: 600;
+  }
+  .badge-blood { background: #fff0e6; color: #8B2E00; }
+  .badge-married { background: #e8f4ff; color: #1a5276; }
+  .badge-review { background: #fff3cd; color: #856404; }
+
+  /* Node styles */
+  .node-male   { fill: #D4856A; }
+  .node-female { fill: #E8A87C; }
+  .node-married-in { opacity: 0.75; }
+  .node-highlight { stroke: #FFD700 !important; stroke-width: 3px !important; }
+  .node-review { stroke: #FFA500 !important; stroke-width: 2px !important; stroke-dasharray: 4; }
+
+  /* Mobile bottom bar */
+  #mobile-hint {
+    position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,0.6); color: white;
+    padding: 6px 16px; border-radius: 20px;
+    font-size: 0.75rem; pointer-events: none;
+    opacity: 1; transition: opacity 1s;
+  }
+</style>
+</head>
+<body>
+
+<!-- Loading -->
+<div id="loading">
+  <div class="spinner"></div>
+  <p style="color:#8B2E00;font-size:1rem;font-weight:600;">Loading Khare Family Tree…</p>
+  <p style="color:#aaa;font-size:0.8rem;margin-top:6px;">खरे परिवार</p>
+</div>
+
+<!-- Header -->
+<div id="header">
+  <div>
+    <h1>🌳 Khare Family Tree</h1>
+    <p>खरे परिवार — 8 Generations</p>
+  </div>
+  <div id="controls">
+    <input id="search-box" type="text" placeholder="Search name…" oninput="searchTree(this.value)">
+    <button onclick="zoomIn()">＋</button>
+    <button onclick="zoomOut()">－</button>
+    <button onclick="resetView()">⌂</button>
+  </div>
+</div>
+
+<!-- Tree Canvas -->
+<div id="canvas-wrap">
+  <svg id="tree-svg"></svg>
+</div>
+
+<!-- Tooltip -->
+<div id="tooltip"></div>
+
+<!-- Person Modal -->
+<div id="modal-overlay" onclick="closeModal(event)">
+  <div id="modal">
+    <button class="btn-close" onclick="closeModalDirect()">×</button>
+    <h2 id="modal-name"></h2>
+    <p class="subtitle" id="modal-subtitle"></p>
+    <div class="modal-tabs">
+      <div class="modal-tab active" onclick="switchTab('info')">Info</div>
+      <div class="modal-tab" onclick="switchTab('comment')">💬 Comment</div>
+      <div class="modal-tab" onclick="switchTab('suggest')">✏️ Suggest Edit</div>
+    </div>
+    <div id="tab-info" class="tab-panel active"></div>
+    <div id="tab-comment" class="tab-panel">
+      <div class="modal-field">
+        <label>Your Name</label>
+        <input type="text" id="c-name" placeholder="e.g. Priya Khare">
+      </div>
+      <div class="modal-field">
+        <label>Your Email (optional)</label>
+        <input type="email" id="c-email" placeholder="priya@email.com">
+      </div>
+      <div class="modal-field">
+        <label>Comment</label>
+        <textarea id="c-content" rows="4" placeholder="Share a memory, anecdote, or note about this person…"></textarea>
+      </div>
+      <button class="btn-submit" onclick="submitComment()">Post Comment</button>
+    </div>
+    <div id="tab-suggest" class="tab-panel">
+      <div class="modal-field">
+        <label>Your Name</label>
+        <input type="text" id="s-name" placeholder="e.g. Priya Khare">
+      </div>
+      <div class="modal-field">
+        <label>Your Email</label>
+        <input type="email" id="s-email" placeholder="priya@email.com">
+      </div>
+      <div class="modal-field">
+        <label>Field to correct</label>
+        <select id="s-field">
+          <option value="name">Name</option>
+          <option value="current_location">Location</option>
+          <option value="birth_date">Birth Date</option>
+          <option value="death_date">Death Date</option>
+          <option value="notes">Notes / Biography</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <label>Current value</label>
+        <input type="text" id="s-old" readonly style="background:#f5f5f5">
+      </div>
+      <div class="modal-field">
+        <label>Correct value</label>
+        <input type="text" id="s-new" placeholder="Enter the correct value">
+      </div>
+      <button class="btn-submit" onclick="submitSuggestion()">Submit Suggestion</button>
+    </div>
+  </div>
+</div>
+
+<div id="mobile-hint">Pinch to zoom · Drag to pan · Tap a name</div>
+
+<script>
+// ── Config ──────────────────────────────────────────────────
+const SUPABASE_URL = "https://pozpdssxiykixodupanu.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBvenBkc3N4aXlraXhvZHVwYW51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4Mzk5NDMsImV4cCI6MjA5NjQxNTk0M30.3nE59InmMpsczdcay2lRKry9_D0O4aIQZ7xQLEM1BUo";
+
+const HEADERS = {
+  "apikey": SUPABASE_ANON,
+  "Authorization": `Bearer ${SUPABASE_ANON}`,
+  "Content-Type": "application/json"
+};
+
+// ── State ────────────────────────────────────────────────────
+let persons = [], relationships = [], comments = [];
+let nodes = {}, rendered = false;
+let currentPersonId = null;
+
+// Pan/zoom
+let panX = 0, panY = 0, scale = 1;
+let isPanning = false, startX = 0, startY = 0;
+
+// ── Fetch data ───────────────────────────────────────────────
+async function fetchAll() {
+  const [pRes, rRes, cRes] = await Promise.all([
+    fetch(`${SUPABASE_URL}/rest/v1/persons?select=*&order=generation,birth_order`, { headers: HEADERS }),
+    fetch(`${SUPABASE_URL}/rest/v1/relationships?select=*`, { headers: HEADERS }),
+    fetch(`${SUPABASE_URL}/rest/v1/comments?select=*&status=eq.approved&order=created_at.desc`, { headers: HEADERS }),
+  ]);
+  persons      = await pRes.json();
+  relationships = await rRes.json();
+  comments     = await cRes.json();
+}
+
+// ── Layout ───────────────────────────────────────────────────
+const NODE_W = 120, NODE_H = 44, GEN_GAP = 100, SIBLING_GAP = 14;
+
+function buildLayout() {
+  // Index persons
+  const byId = {};
+  persons.forEach(p => byId[p.id] = { ...p, children: [], spouseId: null });
+
+  // Map relationships
+  const parentOf = {}; // child_id → parent_id
+  relationships.forEach(r => {
+    if (r.type === "parent_child") {
+      if (!byId[r.person2_id]) return;
+      byId[r.person2_id]._parentId = r.person1_id;
+      if (byId[r.person1_id]) byId[r.person1_id].children.push(r.person2_id);
+    }
+    if (r.type === "spouse") {
+      if (byId[r.person1_id]) byId[r.person1_id].spouseId = r.person2_id;
+      if (byId[r.person2_id]) byId[r.person2_id].spouseId = r.person1_id;
+    }
+  });
+
+  // Group by generation
+  const gens = {};
+  persons.forEach(p => {
+    const g = p.generation ?? 0;
+    if (!gens[g]) gens[g] = [];
+    gens[g].push(p.id);
+  });
+
+  const genNums = Object.keys(gens).map(Number).sort((a,b) => a-b);
+
+  // Assign Y by generation
+  genNums.forEach(g => {
+    gens[g].forEach(id => {
+      if (byId[id]) byId[id]._y = g * GEN_GAP + 80;
+    });
+  });
+
+  // Assign X: simple left-to-right per generation with spacing
+  const unitW = NODE_W + SIBLING_GAP;
+  genNums.forEach(g => {
+    const ids = gens[g];
+    const totalW = ids.length * unitW;
+    ids.forEach((id, i) => {
+      if (byId[id]) byId[id]._x = i * unitW - totalW / 2 + unitW / 2;
+    });
+  });
+
+  nodes = byId;
+  return { genNums, gens };
+}
+
+// ── Render SVG ───────────────────────────────────────────────
+function renderTree() {
+  const svg = document.getElementById("tree-svg");
+  const wrap = document.getElementById("canvas-wrap");
+  const W = wrap.clientWidth, H = wrap.clientHeight;
+
+  svg.setAttribute("width", W);
+  svg.setAttribute("height", H);
+  svg.innerHTML = "";
+
+  const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  g.setAttribute("id", "root-g");
+  svg.appendChild(g);
+
+  // Lines first
+  const linesG = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  linesG.setAttribute("id", "lines");
+  g.appendChild(linesG);
+
+  relationships.forEach(r => {
+    if (r.type !== "parent_child") return;
+    const parent = nodes[r.person1_id];
+    const child  = nodes[r.person2_id];
+    if (!parent || !child) return;
+
+    const px = parent._x + W/2, py = parent._y + NODE_H;
+    const cx = child._x  + W/2, cy = child._y;
+    const my = (py + cy) / 2;
+
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", `M${px},${py} C${px},${my} ${cx},${my} ${cx},${cy}`);
+    path.setAttribute("fill", "none");
+    path.setAttribute("stroke", "#C0622A55");
+    path.setAttribute("stroke-width", "1.5");
+    linesG.appendChild(path);
+  });
+
+  // Spouse lines
+  relationships.forEach(r => {
+    if (r.type !== "spouse") return;
+    const p1 = nodes[r.person1_id], p2 = nodes[r.person2_id];
+    if (!p1 || !p2) return;
+    if (Math.abs(p1._y - p2._y) > 10) return; // skip if different gen
+
+    const x1 = p1._x + W/2 + NODE_W/2;
+    const x2 = p2._x + W/2 - NODE_W/2;
+    const y  = p1._y + NODE_H/2;
+
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    line.setAttribute("x1", x1); line.setAttribute("y1", y);
+    line.setAttribute("x2", x2); line.setAttribute("y2", y);
+    line.setAttribute("stroke", "#aaa");
+    line.setAttribute("stroke-width", "1.5");
+    line.setAttribute("stroke-dasharray", "4 3");
+    linesG.appendChild(line);
+  });
+
+  // Nodes
+  const nodesG = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  nodesG.setAttribute("id", "nodes");
+  g.appendChild(nodesG);
+
+  Object.values(nodes).forEach(p => {
+    const nx = p._x + W/2 - NODE_W/2;
+    const ny = p._y;
+    const isFemale = p.gender === "F";
+    const isBlood  = p.blood_member !== false;
+    const needsReview = p.needs_review;
+
+    const nodeG = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    nodeG.setAttribute("class", "person-node");
+    nodeG.setAttribute("data-id", p.id);
+    nodeG.style.cursor = "pointer";
+
+    // Rect
+    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    rect.setAttribute("x", nx); rect.setAttribute("y", ny);
+    rect.setAttribute("width", NODE_W); rect.setAttribute("height", NODE_H);
+    rect.setAttribute("rx", isFemale ? "22" : "6");
+    rect.setAttribute("fill", isFemale ? "#E8A87C" : "#D4856A");
+    rect.setAttribute("opacity", isBlood ? "1" : "0.65");
+    rect.setAttribute("stroke", needsReview ? "#FFA500" : "white");
+    rect.setAttribute("stroke-width", needsReview ? "2" : "1.5");
+    if (needsReview) rect.setAttribute("stroke-dasharray", "4");
+
+    // Name text
+    const displayName = p.name.replace(/^Shrimati\s+/i, "").replace(/^Shri\s+/i, "");
+    const words = displayName.split(" ");
+    const line1 = words.slice(0, 2).join(" ");
+    const line2 = words.slice(2).join(" ");
+
+    const text1 = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    text1.setAttribute("x", nx + NODE_W/2);
+    text1.setAttribute("y", ny + (line2 ? 16 : 24));
+    text1.setAttribute("text-anchor", "middle");
+    text1.setAttribute("fill", "white");
+    text1.setAttribute("font-size", "11");
+    text1.setAttribute("font-weight", "600");
+    text1.setAttribute("font-family", "Segoe UI, Arial, sans-serif");
+    text1.textContent = line1;
+
+    nodeG.appendChild(rect);
+    nodeG.appendChild(text1);
+
+    if (line2) {
+      const text2 = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      text2.setAttribute("x", nx + NODE_W/2);
+      text2.setAttribute("y", ny + 30);
+      text2.setAttribute("text-anchor", "middle");
+      text2.setAttribute("fill", "white");
+      text2.setAttribute("font-size", "10");
+      text2.setAttribute("font-family", "Segoe UI, Arial, sans-serif");
+      text2.textContent = line2;
+      nodeG.appendChild(text2);
+    }
+
+    // Generation badge
+    const genBadge = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    genBadge.setAttribute("x", nx + 4);
+    genBadge.setAttribute("y", ny + 10);
+    genBadge.setAttribute("fill", "rgba(255,255,255,0.7)");
+    genBadge.setAttribute("font-size", "8");
+    genBadge.textContent = `G${p.generation}`;
+    nodeG.appendChild(genBadge);
+
+    // Events
+    nodeG.addEventListener("mouseenter", (e) => showTooltip(e, p));
+    nodeG.addEventListener("mouseleave", hideTooltip);
+    nodeG.addEventListener("click", () => openModal(p.id));
+
+    nodesG.appendChild(nodeG);
+  });
+
+  applyTransform();
+  rendered = true;
+}
+
+function applyTransform() {
+  const g = document.getElementById("root-g");
+  if (g) g.setAttribute("transform", `translate(${panX},${panY}) scale(${scale})`);
+}
+
+// ── Pan / Zoom ───────────────────────────────────────────────
+const wrap = document.getElementById("canvas-wrap");
+
+wrap.addEventListener("mousedown", e => {
+  isPanning = true; startX = e.clientX - panX; startY = e.clientY - panY;
+});
+wrap.addEventListener("mousemove", e => {
+  if (!isPanning) return;
+  panX = e.clientX - startX; panY = e.clientY - startY;
+  applyTransform();
+});
+wrap.addEventListener("mouseup", () => isPanning = false);
+wrap.addEventListener("mouseleave", () => isPanning = false);
+
+wrap.addEventListener("wheel", e => {
+  e.preventDefault();
+  const delta = e.deltaY > 0 ? 0.9 : 1.1;
+  scale = Math.max(0.3, Math.min(3, scale * delta));
+  applyTransform();
+}, { passive: false });
+
+// Touch
+let lastDist = 0;
+wrap.addEventListener("touchstart", e => {
+  if (e.touches.length === 1) {
+    isPanning = true;
+    startX = e.touches[0].clientX - panX;
+    startY = e.touches[0].clientY - panY;
+  } else if (e.touches.length === 2) {
+    lastDist = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
+    );
+  }
+}, { passive: true });
+wrap.addEventListener("touchmove", e => {
+  if (e.touches.length === 1 && isPanning) {
+    panX = e.touches[0].clientX - startX;
+    panY = e.touches[0].clientY - startY;
+    applyTransform();
+  } else if (e.touches.length === 2) {
+    const dist = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
+    );
+    scale = Math.max(0.3, Math.min(3, scale * (dist / lastDist)));
+    lastDist = dist;
+    applyTransform();
+  }
+}, { passive: true });
+wrap.addEventListener("touchend", () => isPanning = false);
+
+function zoomIn()    { scale = Math.min(3, scale * 1.2); applyTransform(); }
+function zoomOut()   { scale = Math.max(0.3, scale * 0.85); applyTransform(); }
+function resetView() { panX = 0; panY = 0; scale = 0.85; applyTransform(); }
+
+// ── Tooltip ──────────────────────────────────────────────────
+const tooltip = document.getElementById("tooltip");
+
+function showTooltip(e, p) {
+  const loc = p.current_location || "—";
+  const gen = `Generation ${p.generation}`;
+  const blood = p.blood_member !== false ? "Khare bloodline 🩸" : "Married in 💍";
+  tooltip.innerHTML = `
+    <h3>${p.name}</h3>
+    <p>📍 ${loc}</p>
+    <p>🌿 ${gen}</p>
+    <p>${blood}</p>
+    ${p.needs_review ? '<p style="color:#FFA500">⚠️ Needs review</p>' : ''}
+  `;
+  tooltip.style.display = "block";
+  moveTooltip(e);
+}
+function moveTooltip(e) {
+  let x = e.clientX + 16, y = e.clientY + 10;
+  if (x + 270 > window.innerWidth)  x = e.clientX - 270;
+  if (y + 140 > window.innerHeight) y = e.clientY - 140;
+  tooltip.style.left = x + "px";
+  tooltip.style.top  = y + "px";
+}
+function hideTooltip() { tooltip.style.display = "none"; }
+wrap.addEventListener("mousemove", e => { if (tooltip.style.display === "block") moveTooltip(e); });
+
+// ── Search ───────────────────────────────────────────────────
+function searchTree(query) {
+  const q = query.toLowerCase().trim();
+  document.querySelectorAll(".person-node").forEach(el => {
+    const id = el.getAttribute("data-id");
+    const p  = nodes[id];
+    if (!p) return;
+    const match = !q || p.name.toLowerCase().includes(q);
+    el.style.opacity = match ? "1" : "0.2";
+  });
+}
+
+// ── Modal ────────────────────────────────────────────────────
+function openModal(id) {
+  currentPersonId = id;
+  const p = nodes[id];
+  if (!p) return;
+
+  document.getElementById("modal-name").textContent = p.name;
+  document.getElementById("modal-subtitle").textContent =
+    `Generation ${p.generation} · ${p.blood_member !== false ? "Khare bloodline" : "Married in"}`;
+
+  // Find relatives
+  const spouseRel = relationships.find(r =>
+    r.type === "spouse" && (r.person1_id === id || r.person2_id === id)
+  );
+  const spouseId  = spouseRel ? (spouseRel.person1_id === id ? spouseRel.person2_id : spouseRel.person1_id) : null;
+  const spouse    = spouseId ? nodes[spouseId] : null;
+
+  const parentRel = relationships.find(r => r.type === "parent_child" && r.person2_id === id);
+  const parent    = parentRel ? nodes[parentRel.person1_id] : null;
+
+  const children  = relationships
+    .filter(r => r.type === "parent_child" && r.person1_id === id)
+    .map(r => nodes[r.person2_id])
+    .filter(Boolean);
+
+  // Person comments
+  const personComments = comments.filter(c => c.person_id === id);
+
+  document.getElementById("tab-info").innerHTML = `
+    <div class="info-row"><span class="info-label">Name</span><span class="info-value">${p.name}</span></div>
+    <div class="info-row"><span class="info-label">Gender</span><span class="info-value">${p.gender === "M" ? "Male" : p.gender === "F" ? "Female" : "—"}</span></div>
+    <div class="info-row"><span class="info-label">Generation</span><span class="info-value">${p.generation}</span></div>
+    <div class="info-row"><span class="info-label">Location</span><span class="info-value">${p.current_location || "—"}</span></div>
+    <div class="info-row"><span class="info-label">Status</span><span class="info-value">${p.is_alive !== false ? "Living" : "Deceased"}</span></div>
+    <div class="info-row"><span class="info-label">Lineage</span>
+      <span class="info-value">
+        <span class="badge ${p.blood_member !== false ? 'badge-blood' : 'badge-married'}">${p.blood_member !== false ? "🩸 Khare" : "💍 Married in"}</span>
+        ${p.needs_review ? '<span class="badge badge-review">⚠️ Needs review</span>' : ''}
+      </span>
+    </div>
+    ${parent ? `<div class="info-row"><span class="info-label">Parent</span><span class="info-value" style="cursor:pointer;color:#8B2E00" onclick="closeModalDirect();openModal('${parent.id}')">${parent.name}</span></div>` : ""}
+    ${spouse ? `<div class="info-row"><span class="info-label">Spouse</span><span class="info-value" style="cursor:pointer;color:#8B2E00" onclick="closeModalDirect();openModal('${spouse.id}')">${spouse.name}</span></div>` : ""}
+    ${children.length ? `<div class="info-row"><span class="info-label">Children</span><span class="info-value">${children.map(c => `<span style="cursor:pointer;color:#8B2E00;margin-right:8px" onclick="closeModalDirect();openModal('${c.id}')">${c.name}</span>`).join("")}</span></div>` : ""}
+    ${p.notes ? `<div class="info-row"><span class="info-label">Notes</span><span class="info-value">${p.notes}</span></div>` : ""}
+    ${personComments.length ? `
+      <div style="margin-top:16px">
+        <p style="font-size:0.8rem;color:#888;margin-bottom:8px">💬 Comments (${personComments.length})</p>
+        ${personComments.map(c => `
+          <div style="background:#f9f9f9;border-radius:8px;padding:8px 12px;margin-bottom:6px">
+            <p style="font-size:0.82rem;font-weight:600">${c.commenter_name}</p>
+            <p style="font-size:0.82rem;color:#555">${c.content}</p>
+            <p style="font-size:0.72rem;color:#aaa">${c.created_at?.slice(0,10)}</p>
+          </div>`).join("")}
+      </div>` : ""}
+  `;
+
+  // Pre-fill suggest old value
+  document.getElementById("s-old").value = "";
+  document.getElementById("s-field").onchange = function() {
+    const field = this.value;
+    document.getElementById("s-old").value = p[field] || "";
+  };
+
+  switchTab("info");
+  document.getElementById("modal-overlay").classList.add("open");
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById("modal-overlay")) closeModalDirect();
+}
+function closeModalDirect() {
+  document.getElementById("modal-overlay").classList.remove("open");
+  currentPersonId = null;
+}
+
+function switchTab(name) {
+  document.querySelectorAll(".modal-tab").forEach((t, i) => {
+    const names = ["info", "comment", "suggest"];
+    t.classList.toggle("active", names[i] === name);
+  });
+  document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+  document.getElementById(`tab-${name}`).classList.add("active");
+}
+
+// ── Submit comment ───────────────────────────────────────────
+async function submitComment() {
+  const name    = document.getElementById("c-name").value.trim();
+  const email   = document.getElementById("c-email").value.trim();
+  const content = document.getElementById("c-content").value.trim();
+
+  if (!name || !content) { alert("Please enter your name and a comment."); return; }
+
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/comments`, {
+    method: "POST",
+    headers: { ...HEADERS, "Prefer": "return=minimal" },
+    body: JSON.stringify({
+      person_id: currentPersonId,
+      commenter_name: name,
+      commenter_email: email,
+      content: content,
+      status: "approved"
+    })
+  });
+
+  if (res.ok) {
+    alert("✅ Comment posted!");
+    document.getElementById("c-name").value = "";
+    document.getElementById("c-email").value = "";
+    document.getElementById("c-content").value = "";
+    closeModalDirect();
+  } else {
+    alert("Something went wrong. Please try again.");
+  }
+}
+
+// ── Submit suggestion ────────────────────────────────────────
+async function submitSuggestion() {
+  const name  = document.getElementById("s-name").value.trim();
+  const email = document.getElementById("s-email").value.trim();
+  const field = document.getElementById("s-field").value;
+  const old_v = document.getElementById("s-old").value;
+  const new_v = document.getElementById("s-new").value.trim();
+
+  if (!name || !new_v) { alert("Please fill in your name and the correct value."); return; }
+
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/change_requests`, {
+    method: "POST",
+    headers: { ...HEADERS, "Prefer": "return=minimal" },
+    body: JSON.stringify({
+      person_id: currentPersonId,
+      requested_by_name: name,
+      requested_by_email: email,
+      field_name: field,
+      old_value: old_v,
+      new_value: new_v,
+      status: "pending"
+    })
+  });
+
+  if (res.ok) {
+    alert("✅ Suggestion submitted! Admin will review it.");
+    document.getElementById("s-new").value = "";
+    closeModalDirect();
+  } else {
+    alert("Something went wrong. Please try again.");
+  }
+}
+
+// ── Init ─────────────────────────────────────────────────────
+async function init() {
+  try {
+    await fetchAll();
+    buildLayout();
+
+    // Center view
+    panX = 0; panY = 40; scale = 0.85;
+
+    renderTree();
+    document.getElementById("loading").style.display = "none";
+
+    // Hide mobile hint after 3s
+    setTimeout(() => {
+      const hint = document.getElementById("mobile-hint");
+      if (hint) hint.style.opacity = "0";
+    }, 3000);
+
+  } catch (err) {
+    document.getElementById("loading").innerHTML =
+      `<p style="color:red">❌ Failed to load: ${err.message}</p>
+       <p style="color:#888;font-size:0.8rem;margin-top:8px">Check Supabase URL and schema.</p>`;
+  }
+}
+
+window.addEventListener("resize", () => { if (rendered) renderTree(); });
+init();
+</script>
+</body>
+</html>
