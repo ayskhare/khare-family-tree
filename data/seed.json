@@ -1,0 +1,204 @@
+{
+  "meta": {
+    "family_name": "Khare Family",
+    "created": "2026-06-07",
+    "source": "Handwritten family tree - Hindi (images + manual corrections)",
+    "notes": "Gen 2 corrected: Durga Prasad added as eldest. Some names are best-guess from images - marked with needs_review=true."
+  },
+  "members": [
+    {
+      "id": "P001",
+      "name": "Jeevan Lal",
+      "generation": 0,
+      "gender": "M",
+      "location": "Sagar",
+      "blood_member": true,
+      "notes": "Root ancestor"
+    },
+    {
+      "id": "P002",
+      "name": "Bholanath",
+      "generation": 1,
+      "gender": "M",
+      "blood_member": true,
+      "notes": "5 sons, 2 daughters"
+    },
+    {
+      "id": "P002W",
+      "name": "Shrimati (Bholanath wife)",
+      "generation": 1,
+      "gender": "F",
+      "blood_member": false,
+      "needs_review": true
+    },
+
+    { "id": "P010", "name": "Durga Prasad", "generation": 2, "gender": "M", "blood_member": true, "birth_order": 1, "location": "Sagar/Jabalpur", "notes": "Eldest son of Bholanath. Ayush's grandfather." },
+    { "id": "P010W", "name": "Shrimati (Durga Prasad wife)", "generation": 2, "gender": "F", "blood_member": false, "needs_review": true },
+
+    { "id": "P011", "name": "Ram Kumar", "generation": 2, "gender": "M", "blood_member": true, "birth_order": 2 },
+    { "id": "P011W", "name": "Mano Kamla", "generation": 2, "gender": "F", "blood_member": false, "notes": "2 sons 4 daughters" },
+
+    { "id": "P012", "name": "Krishna Kumar", "generation": 2, "gender": "M", "blood_member": true, "birth_order": 3 },
+    { "id": "P012W", "name": "Urmila", "generation": 2, "gender": "F", "blood_member": false, "notes": "1 daughter" },
+
+    { "id": "P013", "name": "Raj Kumar", "generation": 2, "gender": "M", "blood_member": true, "birth_order": 4 },
+    { "id": "P013W", "name": "Hemlata", "generation": 2, "gender": "F", "blood_member": false, "notes": "2 daughters" },
+
+    { "id": "P014", "name": "Sahodra", "generation": 2, "gender": "F", "blood_member": true, "birth_order": 5, "location": "Jabalpur", "notes": "Daughter - married out" },
+    { "id": "P014H", "name": "Virendra Kumar (Sahodra husband)", "generation": 2, "gender": "M", "blood_member": false, "location": "Jabalpur" },
+
+    { "id": "P015", "name": "Maya", "generation": 2, "gender": "F", "blood_member": true, "birth_order": 6, "location": "Jabalpur", "notes": "Daughter - 1 son 2 daughters" },
+    { "id": "P015H", "name": "Pitoda (Maya husband)", "generation": 2, "gender": "M", "blood_member": false, "location": "Jabalpur" },
+
+    { "id": "P016", "name": "Virender Kumar", "generation": 2, "gender": "M", "blood_member": true, "birth_order": 7 },
+    { "id": "P016W", "name": "Kanti", "generation": 2, "gender": "F", "blood_member": false, "notes": "1 son 1 daughter" },
+
+    { "id": "P020", "name": "Arun Khare", "generation": 3, "gender": "M", "blood_member": true, "birth_order": 1, "location": "Indore", "notes": "Eldest son of Durga Prasad. Ayush's father." },
+    { "id": "P020W", "name": "Sandhya Khare", "generation": 3, "gender": "F", "blood_member": false, "location": "Indore" },
+
+    { "id": "P021", "name": "Suresh Khare", "generation": 3, "gender": "M", "blood_member": true, "birth_order": 2, "needs_review": true, "notes": "Son of Durga Prasad - name needs review" },
+    { "id": "P021W", "name": "Shrimati (Suresh wife)", "generation": 3, "gender": "F", "blood_member": false, "needs_review": true },
+
+    { "id": "P022", "name": "Rakesh Khare", "generation": 3, "gender": "M", "blood_member": true, "birth_order": 3, "needs_review": true, "notes": "Son of Durga Prasad - name needs review" },
+    { "id": "P022W", "name": "Shrimati (Rakesh wife)", "generation": 3, "gender": "F", "blood_member": false, "needs_review": true },
+
+    { "id": "P023", "name": "Shrimati Neela (Durga daughter)", "generation": 3, "gender": "F", "blood_member": true, "birth_order": 4, "needs_review": true, "notes": "Daughter of Durga Prasad - name needs review" },
+    { "id": "P023H", "name": "Atul (Neela husband)", "generation": 3, "gender": "M", "blood_member": false, "location": "Bhopal", "needs_review": true },
+
+    { "id": "P030", "name": "Nitu", "generation": 3, "gender": "F", "blood_member": true, "notes": "Daughter of Ram Kumar", "location": "Jabalpur" },
+    { "id": "P030H", "name": "Abhicharan", "generation": 3, "gender": "M", "blood_member": false, "location": "Jabalpur" },
+
+    { "id": "P031", "name": "Rakesh (Ram Kumar son)", "generation": 3, "gender": "M", "blood_member": true, "notes": "Son of Ram Kumar" },
+    { "id": "P031W", "name": "Shrimati (Rakesh RK wife)", "generation": 3, "gender": "F", "blood_member": false, "needs_review": true },
+
+    { "id": "P032", "name": "Shrimati Rahees", "generation": 3, "gender": "F", "blood_member": true, "notes": "Daughter of Ram Kumar", "needs_review": true },
+    { "id": "P032H", "name": "Shrimati Rahees husband", "generation": 3, "gender": "M", "blood_member": false, "needs_review": true },
+
+    { "id": "P033", "name": "Mukesh (Ram Kumar son)", "generation": 3, "gender": "M", "blood_member": true, "notes": "Son of Ram Kumar" },
+    { "id": "P033W", "name": "Shrimati (Mukesh wife)", "generation": 3, "gender": "F", "blood_member": false, "needs_review": true },
+
+    { "id": "P034", "name": "Shrimati Jyoti", "generation": 3, "gender": "F", "blood_member": true, "notes": "Daughter of Ram Kumar", "location": "Katni" },
+    { "id": "P034H", "name": "Shrikashyap", "generation": 3, "gender": "M", "blood_member": false, "location": "Katni" },
+
+    { "id": "P035", "name": "Shrimati (Ram Kumar daughter 2)", "generation": 3, "gender": "F", "blood_member": true, "needs_review": true },
+
+    { "id": "P040", "name": "Sadhu (Krishna Kumar daughter)", "generation": 3, "gender": "F", "blood_member": true, "notes": "Daughter of Krishna Kumar", "location": "Katni" },
+    { "id": "P040H", "name": "Amit Nigam", "generation": 3, "gender": "M", "blood_member": false, "location": "Katni" },
+
+    { "id": "P041", "name": "Suka (Krishna Kumar daughter)", "generation": 3, "gender": "F", "blood_member": true, "notes": "Daughter of Krishna Kumar", "location": "Seoni" },
+    { "id": "P041H", "name": "Sushil Semsa", "generation": 3, "gender": "M", "blood_member": false, "location": "Seoni" },
+
+    { "id": "P042", "name": "Pran (Raj Kumar son)", "generation": 3, "gender": "M", "blood_member": true, "notes": "Son of Raj Kumar" },
+
+    { "id": "P043", "name": "Shrimati Abha", "generation": 3, "gender": "F", "blood_member": true, "notes": "Daughter of Raj Kumar", "location": "Damoh" },
+    { "id": "P043H", "name": "Mudit Shrivastava", "generation": 3, "gender": "M", "blood_member": false, "location": "Damoh" },
+
+    { "id": "P044", "name": "Atulay (Raj Kumar son)", "generation": 3, "gender": "M", "blood_member": true, "notes": "Son of Raj Kumar", "location": "Khidwada" },
+    { "id": "P045", "name": "Shrimati Vibha", "generation": 3, "gender": "F", "blood_member": true, "notes": "Daughter of Raj Kumar", "location": "Mathura" },
+    { "id": "P045H", "name": "Vendrashwar", "generation": 3, "gender": "M", "blood_member": false, "location": "Mathura" },
+
+    { "id": "P046", "name": "Shrimati Deepa", "generation": 3, "gender": "F", "blood_member": true, "notes": "Daughter of Raj Kumar", "location": "Khidwada" },
+    { "id": "P046H", "name": "Vinod", "generation": 3, "gender": "M", "blood_member": false, "location": "Khidwada" },
+
+    { "id": "P047", "name": "Arbind (Raj Kumar son)", "generation": 3, "gender": "M", "blood_member": true, "notes": "Son of Raj Kumar", "location": "Jabalpur" },
+
+    { "id": "P050", "name": "Gulnesh (Maya son)", "generation": 3, "gender": "M", "blood_member": true, "notes": "Son of Maya", "location": "Shivpuri" },
+    { "id": "P050W", "name": "Shikha", "generation": 3, "gender": "F", "blood_member": false, "location": "Shivpuri" },
+
+    { "id": "P051", "name": "Shrimati Neha (Virender daughter)", "generation": 3, "gender": "F", "blood_member": true, "notes": "Daughter of Virender Kumar", "location": "Jabalpur" },
+    { "id": "P051H", "name": "Vakeel", "generation": 3, "gender": "M", "blood_member": false, "location": "Jabalpur" },
+
+    { "id": "P100", "name": "Ayush Khare", "generation": 4, "gender": "M", "blood_member": true, "birth_order": 1, "location": "Indore", "notes": "Son of Arun Khare. Admin of this tree." },
+    { "id": "P100W", "name": "Shrimati (Ayush wife)", "generation": 4, "gender": "F", "blood_member": false, "location": "Indore", "needs_review": true },
+
+    { "id": "P101", "name": "Suyash Khare", "generation": 4, "gender": "M", "blood_member": true, "birth_order": 2, "location": "Indore", "notes": "Son of Arun Khare" },
+
+    { "id": "P102", "name": "Punita (Arun daughter)", "generation": 4, "gender": "F", "blood_member": true, "notes": "Daughter of Arun", "location": "Jabalpur", "needs_review": true },
+    { "id": "P102H", "name": "Sudharti Vistan", "generation": 4, "gender": "M", "blood_member": false, "location": "Jabalpur" },
+
+    { "id": "P103", "name": "Prasoon (Mukesh son)", "generation": 4, "gender": "M", "blood_member": true, "notes": "Son of Mukesh (Ram Kumar branch)" },
+
+    { "id": "P104", "name": "Dhruv (Rakesh son)", "generation": 4, "gender": "M", "blood_member": true, "notes": "Son of Rakesh (Ram Kumar branch)", "needs_review": true },
+
+    { "id": "P105", "name": "Amol (Atulay son)", "generation": 4, "gender": "M", "blood_member": true, "notes": "Son of Atulay (Raj Kumar branch)" },
+    { "id": "P106", "name": "Mukul (Atulay son)", "generation": 4, "gender": "M", "blood_member": true, "notes": "Son of Atulay (Raj Kumar branch)" },
+
+    { "id": "P107", "name": "Shibam (Arbind son)", "generation": 4, "gender": "M", "blood_member": true, "notes": "Son of Arbind (Raj Kumar branch)" },
+
+    { "id": "P200", "name": "Ashvi Khare", "generation": 5, "gender": "F", "blood_member": true, "notes": "Daughter of Ayush. Youngest generation." }
+  ],
+  "relationships": [
+    { "type": "parent_child", "parent_id": "P001", "child_id": "P002" },
+    { "type": "spouse", "person1_id": "P002", "person2_id": "P002W" },
+
+    { "type": "parent_child", "parent_id": "P002", "child_id": "P010" },
+    { "type": "parent_child", "parent_id": "P002", "child_id": "P011" },
+    { "type": "parent_child", "parent_id": "P002", "child_id": "P012" },
+    { "type": "parent_child", "parent_id": "P002", "child_id": "P013" },
+    { "type": "parent_child", "parent_id": "P002", "child_id": "P014" },
+    { "type": "parent_child", "parent_id": "P002", "child_id": "P015" },
+    { "type": "parent_child", "parent_id": "P002", "child_id": "P016" },
+
+    { "type": "spouse", "person1_id": "P010", "person2_id": "P010W" },
+    { "type": "spouse", "person1_id": "P011", "person2_id": "P011W" },
+    { "type": "spouse", "person1_id": "P012", "person2_id": "P012W" },
+    { "type": "spouse", "person1_id": "P013", "person2_id": "P013W" },
+    { "type": "spouse", "person1_id": "P014", "person2_id": "P014H" },
+    { "type": "spouse", "person1_id": "P015", "person2_id": "P015H" },
+    { "type": "spouse", "person1_id": "P016", "person2_id": "P016W" },
+
+    { "type": "parent_child", "parent_id": "P010", "child_id": "P020" },
+    { "type": "parent_child", "parent_id": "P010", "child_id": "P021" },
+    { "type": "parent_child", "parent_id": "P010", "child_id": "P022" },
+    { "type": "parent_child", "parent_id": "P010", "child_id": "P023" },
+    { "type": "spouse", "person1_id": "P020", "person2_id": "P020W" },
+    { "type": "spouse", "person1_id": "P021", "person2_id": "P021W" },
+    { "type": "spouse", "person1_id": "P022", "person2_id": "P022W" },
+    { "type": "spouse", "person1_id": "P023", "person2_id": "P023H" },
+
+    { "type": "parent_child", "parent_id": "P011", "child_id": "P030" },
+    { "type": "parent_child", "parent_id": "P011", "child_id": "P031" },
+    { "type": "parent_child", "parent_id": "P011", "child_id": "P032" },
+    { "type": "parent_child", "parent_id": "P011", "child_id": "P033" },
+    { "type": "parent_child", "parent_id": "P011", "child_id": "P034" },
+    { "type": "parent_child", "parent_id": "P011", "child_id": "P035" },
+    { "type": "spouse", "person1_id": "P030", "person2_id": "P030H" },
+    { "type": "spouse", "person1_id": "P031", "person2_id": "P031W" },
+    { "type": "spouse", "person1_id": "P034", "person2_id": "P034H" },
+
+    { "type": "parent_child", "parent_id": "P012", "child_id": "P040" },
+    { "type": "parent_child", "parent_id": "P012", "child_id": "P041" },
+    { "type": "spouse", "person1_id": "P040", "person2_id": "P040H" },
+    { "type": "spouse", "person1_id": "P041", "person2_id": "P041H" },
+
+    { "type": "parent_child", "parent_id": "P013", "child_id": "P042" },
+    { "type": "parent_child", "parent_id": "P013", "child_id": "P043" },
+    { "type": "parent_child", "parent_id": "P013", "child_id": "P044" },
+    { "type": "parent_child", "parent_id": "P013", "child_id": "P045" },
+    { "type": "parent_child", "parent_id": "P013", "child_id": "P046" },
+    { "type": "parent_child", "parent_id": "P013", "child_id": "P047" },
+    { "type": "spouse", "person1_id": "P043", "person2_id": "P043H" },
+    { "type": "spouse", "person1_id": "P045", "person2_id": "P045H" },
+    { "type": "spouse", "person1_id": "P046", "person2_id": "P046H" },
+
+    { "type": "parent_child", "parent_id": "P015", "child_id": "P050" },
+    { "type": "spouse", "person1_id": "P050", "person2_id": "P050W" },
+
+    { "type": "parent_child", "parent_id": "P016", "child_id": "P051" },
+    { "type": "spouse", "person1_id": "P051", "person2_id": "P051H" },
+
+    { "type": "parent_child", "parent_id": "P020", "child_id": "P100" },
+    { "type": "parent_child", "parent_id": "P020", "child_id": "P101" },
+    { "type": "parent_child", "parent_id": "P020", "child_id": "P102" },
+    { "type": "spouse", "person1_id": "P100", "person2_id": "P100W" },
+    { "type": "spouse", "person1_id": "P102", "person2_id": "P102H" },
+
+    { "type": "parent_child", "parent_id": "P033", "child_id": "P103" },
+    { "type": "parent_child", "parent_id": "P031", "child_id": "P104" },
+    { "type": "parent_child", "parent_id": "P044", "child_id": "P105" },
+    { "type": "parent_child", "parent_id": "P044", "child_id": "P106" },
+    { "type": "parent_child", "parent_id": "P047", "child_id": "P107" },
+
+    { "type": "parent_child", "parent_id": "P100", "child_id": "P200" }
+  ]
+}
