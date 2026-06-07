@@ -78,8 +78,7 @@ khare-family-tree/
 ├── public/
 │   └── index.html        ← Family tree viewer (Netlify)
 ├── admin/
-│   ├── app.py            ← Admin panel (Streamlit Cloud)
-│   └── requirements.txt
+│   └── app.py            ← Admin panel (Streamlit Cloud)
 ├── sql/
 │   └── schema.sql        ← DB schema (run once in Supabase)
 ├── data/
@@ -87,6 +86,7 @@ khare-family-tree/
 ├── migrate.py            ← One-time migration script
 ├── .env.example          ← Template for credentials
 └── README.md
+└── requirements.txt
 ```
 
 ---
