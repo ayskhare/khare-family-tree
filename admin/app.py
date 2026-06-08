@@ -68,6 +68,15 @@ def get_flagged():
     res = supabase.table("persons").select("*").eq("needs_review", True).execute()
     return res.data
 
+def safe_date(val):
+    """Return a date string or empty string — safe for st.date_input value param."""
+    if val:
+        try:
+            return datetime.strptime(val[:10], "%Y-%m-%d").date()
+        except Exception:
+            pass
+    return None
+
 # ── Sidebar ──────────────────────────────────────────────────
 st.sidebar.title("🌳 Khare Family Admin")
 st.sidebar.markdown("---")
@@ -103,6 +112,10 @@ if page == "📊 Dashboard":
     col3.metric("Pending Items", len(comments) + len(photos) + len(changes))
     col4.metric("Needs Review", len(flagged))
 
+    # NEW: birthday coverage stat
+    with_bday = sum(1 for p in persons if p.get("birth_date"))
+    st.info(f"🎂 **{with_bday} / {len(persons)}** members have a birth date recorded — used by the Dates tab in the family viewer.")
+
     st.markdown("---")
 
     col_a, col_b = st.columns(2)
@@ -129,7 +142,6 @@ elif page == "👥 Members":
 
     persons = get_persons()
 
-    # Filter
     col1, col2 = st.columns(2)
     with col1:
         gen_filter = st.selectbox("Filter by Generation", ["All"] + list(range(0, 9)))
@@ -148,29 +160,49 @@ elif page == "👥 Members":
         with st.expander(f"{'⚠️ ' if p.get('needs_review') else ''}Gen {p.get('generation','?')} | {p['name']} ({p['id']}) {'🩸' if p.get('blood_member') else '💍'}"):
             col1, col2 = st.columns(2)
             with col1:
-                new_name = st.text_input("Name", value=p["name"], key=f"name_{p['id']}")
-                new_gender = st.selectbox("Gender", ["M", "F", "Other"], index=["M","F","Other"].index(p["gender"]) if p.get("gender") in ["M","F","Other"] else 0, key=f"gender_{p['id']}")
-                new_gen = st.number_input("Generation", value=p.get("generation") or 0, min_value=0, max_value=10, key=f"gen_{p['id']}")
-                new_location = st.text_input("Location", value=p.get("current_location") or "", key=f"loc_{p['id']}")
+                new_name     = st.text_input("Name", value=p["name"], key=f"name_{p['id']}")
+                new_gender   = st.selectbox("Gender", ["M", "F", "Other"],
+                                            index=["M","F","Other"].index(p["gender"]) if p.get("gender") in ["M","F","Other"] else 0,
+                                            key=f"gender_{p['id']}")
+                new_gen      = st.number_input("Generation", value=p.get("generation") or 0, min_value=0, max_value=10, key=f"gen_{p['id']}")
+                new_location = st.text_input("Current Location", value=p.get("current_location") or "", key=f"loc_{p['id']}")
+                # ── NEW: date fields ──────────────────────────
+                new_birth_date = st.date_input(
+                    "Birth Date",
+                    value=safe_date(p.get("birth_date")),
+                    key=f"bday_{p['id']}",
+                    help="Used by the 🎂 Dates tab"
+                )
+                new_death_date = st.date_input(
+                    "Death Date (leave blank if alive)",
+                    value=safe_date(p.get("death_date")),
+                    key=f"dday_{p['id']}"
+                )
+                new_birth_place = st.text_input("Birth Place", value=p.get("birth_place") or "", key=f"bplace_{p['id']}")
             with col2:
-                new_blood = st.checkbox("Blood member", value=p.get("blood_member", True), key=f"blood_{p['id']}")
-                new_alive = st.checkbox("Is alive", value=p.get("is_alive", True), key=f"alive_{p['id']}")
+                new_blood  = st.checkbox("Blood member (Khare)", value=p.get("blood_member", True), key=f"blood_{p['id']}")
+                new_alive  = st.checkbox("Is alive", value=p.get("is_alive", True), key=f"alive_{p['id']}")
                 new_review = st.checkbox("Needs review", value=p.get("needs_review", False), key=f"review_{p['id']}")
-                new_notes = st.text_area("Notes", value=p.get("notes") or "", key=f"notes_{p['id']}")
+                new_notes  = st.text_area("Notes", value=p.get("notes") or "", key=f"notes_{p['id']}")
 
             col_save, col_del = st.columns(2)
             with col_save:
                 if st.button("💾 Save", key=f"save_{p['id']}"):
-                    supabase.table("persons").update({
-                        "name": new_name,
-                        "gender": new_gender,
-                        "generation": new_gen,
+                    update_data = {
+                        "name":             new_name,
+                        "gender":           new_gender,
+                        "generation":       new_gen,
                         "current_location": new_location,
-                        "blood_member": new_blood,
-                        "is_alive": new_alive,
-                        "needs_review": new_review,
-                        "notes": new_notes,
-                    }).eq("id", p["id"]).execute()
+                        "blood_member":     new_blood,
+                        "is_alive":         new_alive,
+                        "needs_review":     new_review,
+                        "notes":            new_notes,
+                        "birth_place":      new_birth_place or None,
+                        # Store dates as ISO strings, or None if not set
+                        "birth_date":       str(new_birth_date) if new_birth_date else None,
+                        "death_date":       str(new_death_date) if new_death_date else None,
+                    }
+                    supabase.table("persons").update(update_data).eq("id", p["id"]).execute()
                     st.success("Saved!")
             with col_del:
                 if st.button("🗑️ Delete", key=f"del_{p['id']}"):
@@ -188,19 +220,23 @@ elif page == "➕ Add Member":
     with st.form("add_member"):
         col1, col2 = st.columns(2)
         with col1:
-            new_id = st.text_input("ID (e.g. P201)", help="Must be unique")
-            name = st.text_input("Full Name *")
-            gender = st.selectbox("Gender", ["M", "F", "Other"])
-            generation = st.number_input("Generation", min_value=0, max_value=10, value=0)
-            location = st.text_input("Current Location")
+            new_id      = st.text_input("ID (e.g. P201)", help="Must be unique")
+            name        = st.text_input("Full Name *")
+            gender      = st.selectbox("Gender", ["M", "F", "Other"])
+            generation  = st.number_input("Generation", min_value=0, max_value=10, value=0)
+            location    = st.text_input("Current Location")
+            birth_place = st.text_input("Birth Place")
+            # ── NEW: date fields ──────────────────────────────
+            birth_date  = st.date_input("Birth Date", value=None, help="Used by the 🎂 Dates tab in the family viewer")
+            death_date  = st.date_input("Death Date (leave blank if alive)", value=None)
         with col2:
             blood_member = st.checkbox("Blood member (Khare)", value=True)
-            is_alive = st.checkbox("Is alive", value=True)
-            birth_order = st.number_input("Birth order (among siblings)", min_value=1, value=1)
-            notes = st.text_area("Notes")
+            is_alive     = st.checkbox("Is alive", value=True)
+            birth_order  = st.number_input("Birth order (among siblings)", min_value=1, value=1)
+            notes        = st.text_area("Notes")
 
         st.markdown("**Relationship**")
-        rel_type = st.selectbox("Relationship type", ["parent_child", "spouse", "sibling", "none"])
+        rel_type       = st.selectbox("Relationship type", ["parent_child", "spouse", "sibling", "none"])
         related_person = st.selectbox("Related to", ["None"] + [f"{k}: {v}" for k, v in person_options.items()])
 
         submitted = st.form_submit_button("➕ Add Member")
@@ -208,17 +244,21 @@ elif page == "➕ Add Member":
             if not new_id or not name:
                 st.error("ID and Name are required")
             else:
-                supabase.table("persons").insert({
-                    "id": new_id,
-                    "name": name,
-                    "gender": gender,
-                    "generation": generation,
+                insert_data = {
+                    "id":               new_id,
+                    "name":             name,
+                    "gender":           gender,
+                    "generation":       generation,
                     "current_location": location,
-                    "blood_member": blood_member,
-                    "is_alive": is_alive,
-                    "birth_order": birth_order,
-                    "notes": notes,
-                }).execute()
+                    "blood_member":     blood_member,
+                    "is_alive":         is_alive,
+                    "birth_order":      birth_order,
+                    "notes":            notes,
+                    "birth_place":      birth_place or None,
+                    "birth_date":       str(birth_date) if birth_date else None,
+                    "death_date":       str(death_date) if death_date else None,
+                }
+                supabase.table("persons").insert(insert_data).execute()
 
                 if rel_type != "none" and related_person != "None":
                     related_id = related_person.split(":")[0]
@@ -252,6 +292,8 @@ elif page == "🔗 Relationships":
             "Person 1": person_map.get(r["person1_id"], r["person1_id"]),
             "Type": r["type"],
             "Person 2": person_map.get(r["person2_id"], r["person2_id"]),
+            # NEW: show marriage date if present
+            "Marriage Date": r.get("marriage_date") or "—",
         })
 
     df = pd.DataFrame(rel_rows)
@@ -268,12 +310,21 @@ elif page == "🔗 Relationships":
             rel_type = st.selectbox("Type", ["parent_child", "spouse", "sibling"])
         with col3:
             p2 = st.selectbox("Person 2 (child/spouse)", person_options)
+        # ── NEW: marriage date for spouse relationships ────────
+        marriage_date = st.date_input("Marriage Date (for spouse only, optional)", value=None)
+        marriage_place = st.text_input("Marriage Place (optional)")
+
         if st.form_submit_button("Add"):
-            supabase.table("relationships").insert({
+            rel_row = {
                 "person1_id": p1.split(":")[0],
                 "person2_id": p2.split(":")[0],
-                "type": rel_type
-            }).execute()
+                "type": rel_type,
+            }
+            if rel_type == "spouse" and marriage_date:
+                rel_row["marriage_date"] = str(marriage_date)
+            if rel_type == "spouse" and marriage_place:
+                rel_row["marriage_place"] = marriage_place
+            supabase.table("relationships").insert(rel_row).execute()
             st.success("Relationship added!")
             st.rerun()
 
@@ -393,17 +444,24 @@ elif page == "⚠️ Needs Review":
             with st.expander(f"Gen {p.get('generation','?')} | {p['name']} ({p['id']})"):
                 col1, col2 = st.columns(2)
                 with col1:
-                    new_name = st.text_input("Correct name", value=p["name"], key=f"rname_{p['id']}")
+                    new_name  = st.text_input("Correct name", value=p["name"], key=f"rname_{p['id']}")
                     new_notes = st.text_area("Notes", value=p.get("notes") or "", key=f"rnotes_{p['id']}")
+                    # ── NEW: allow setting birth date during review ──────
+                    new_birth_date = st.date_input(
+                        "Birth Date (if known)",
+                        value=safe_date(p.get("birth_date")),
+                        key=f"rbday_{p['id']}"
+                    )
                 with col2:
                     st.markdown(f"**Gender:** {p.get('gender','?')}")
                     st.markdown(f"**Generation:** {p.get('generation','?')}")
                     st.markdown(f"**Location:** {p.get('current_location','—')}")
                 if st.button("✅ Mark as Reviewed", key=f"rev_{p['id']}"):
                     supabase.table("persons").update({
-                        "name": new_name,
-                        "notes": new_notes,
+                        "name":         new_name,
+                        "notes":        new_notes,
                         "needs_review": False,
+                        "birth_date":   str(new_birth_date) if new_birth_date else None,
                     }).eq("id", p["id"]).execute()
                     st.success("Marked as reviewed!")
                     st.rerun()
