@@ -1,763 +1,462 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Khare Family Tree | खरे परिवार</title>
+<link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Hindi&family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --saffron:    #E8660A;
+  --saffron-lt: #F28C3A;
+  --cream:      #FDF6EE;
+  --cream-dk:   #F5E8D8;
+  --terracotta: #C0521A;
+  --bark:       #6B3A1F;
+  --dust:       #D4A882;
+  --married-in: #8A7560;
+  --text-dark:  #2C1A0E;
+  --text-mid:   #6B4C35;
+  --text-soft:  #A08060;
+  --shadow:     rgba(44,26,14,0.12);
+  --shadow-lg:  rgba(44,26,14,0.22);
+  --drawer-bg:  #FFF9F3;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text-dark); height: 100dvh; overflow: hidden; }
 
-  body {
-    font-family: 'Segoe UI', Arial, sans-serif;
-    background: #fdf6ee;
-    color: #2c1810;
-    height: 100vh;
-    overflow: hidden;
-  }
+/* HEADER */
+#header { position: fixed; top: 0; left: 0; right: 0; z-index: 50; background: var(--saffron); padding: 12px 16px 10px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 12px var(--shadow-lg); }
+#header-title { flex: 1; }
+#header-title h1 { font-family: 'Playfair Display', serif; font-size: 1.05rem; font-weight: 700; color: white; line-height: 1.2; }
+#header-title p { font-size: 0.68rem; color: rgba(255,255,255,0.75); margin-top: 1px; }
+#search-btn { background: rgba(255,255,255,0.2); border: none; width: 36px; height: 36px; border-radius: 50%; color: white; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 
-  /* Header */
-  #header {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-    background: linear-gradient(135deg, #8B2E00, #C0622A);
-    color: white;
-    padding: 12px 20px;
-    display: flex; align-items: center; justify-content: space-between;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-  }
-  #header h1 { font-size: 1.2rem; font-weight: 700; }
-  #header p  { font-size: 0.75rem; opacity: 0.85; }
+/* SEARCH */
+#search-overlay { position: fixed; inset: 0; z-index: 200; background: rgba(44,26,14,0.6); backdrop-filter: blur(4px); display: none; flex-direction: column; padding: 60px 16px 20px; }
+#search-overlay.open { display: flex; }
+#search-input-wrap { background: white; border-radius: 14px; padding: 12px 16px; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 24px var(--shadow-lg); }
+#search-input { flex: 1; border: none; outline: none; font-size: 1rem; font-family: 'DM Sans', sans-serif; color: var(--text-dark); background: transparent; }
+#search-close { background: none; border: none; font-size: 1.3rem; color: var(--text-soft); cursor: pointer; }
+#search-results { margin-top: 12px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+.search-result-item { background: white; border-radius: 10px; padding: 12px 14px; cursor: pointer; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 8px var(--shadow); border-left: 3px solid var(--saffron); }
+.sri-name { font-weight: 500; font-size: 0.9rem; color: var(--text-dark); }
+.sri-meta { font-size: 0.75rem; color: var(--text-soft); margin-top: 2px; }
 
-  /* Controls */
-  #controls {
-    display: flex; gap: 8px; align-items: center;
-  }
-  #controls button {
-    background: rgba(255,255,255,0.2);
-    border: 1px solid rgba(255,255,255,0.4);
-    color: white; border-radius: 6px;
-    padding: 6px 12px; cursor: pointer; font-size: 0.85rem;
-  }
-  #controls button:hover { background: rgba(255,255,255,0.35); }
+/* BREADCRUMB */
+#breadcrumb { position: fixed; top: 60px; left: 0; right: 0; z-index: 40; background: var(--cream-dk); padding: 6px 16px; display: flex; align-items: center; overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid rgba(107,58,31,0.1); min-height: 30px; }
+#breadcrumb::-webkit-scrollbar { display: none; }
+.bc-item { font-size: 0.7rem; color: var(--text-soft); white-space: nowrap; cursor: pointer; padding: 2px 4px; border-radius: 4px; }
+.bc-item.active { color: var(--saffron); font-weight: 600; }
+.bc-sep { font-size: 0.65rem; color: var(--dust); margin: 0 2px; }
 
-  /* Search */
-  #search-box {
-    padding: 6px 12px; border-radius: 20px;
-    border: none; outline: none;
-    font-size: 0.85rem; width: 180px;
-  }
+/* CANVAS */
+#canvas { position: fixed; top: 90px; left: 0; right: 0; bottom: 0; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; align-items: center; padding: 16px 12px 40px; gap: 0; }
 
-  /* Legend */
-  #legend {
-    display: flex; gap: 14px; align-items: center; font-size: 0.75rem;
-  }
-  .legend-dot {
-    width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 4px;
-  }
+/* CONNECTOR */
+.conn-v { width: 2px; height: 24px; background: var(--dust); flex-shrink: 0; align-self: center; }
 
-  /* Canvas */
-  #canvas-wrap {
-    position: fixed; top: 56px; left: 0; right: 0; bottom: 0;
-    overflow: hidden; cursor: grab;
-  }
-  #canvas-wrap:active { cursor: grabbing; }
-  #tree-svg { display: block; }
+/* CARDS */
+.card-pair { display: flex; align-items: center; }
+.spouse-line { width: 20px; height: 2px; background: repeating-linear-gradient(to right, var(--dust) 0, var(--dust) 4px, transparent 4px, transparent 8px); flex-shrink: 0; }
 
-  /* Loading */
-  #loading {
-    position: fixed; inset: 0; background: #fdf6ee;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center; z-index: 200;
-  }
-  .spinner {
-    width: 48px; height: 48px;
-    border: 5px solid #C0622A33;
-    border-top-color: #C0622A;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    margin-bottom: 16px;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
+.card { background: white; border-radius: 14px; padding: 11px 14px; box-shadow: 0 3px 14px var(--shadow); cursor: pointer; position: relative; min-width: 108px; max-width: 150px; border: 2px solid transparent; transition: transform 0.15s, box-shadow 0.15s; }
+.card:active { transform: scale(0.96); }
+.card.focus-card { background: var(--saffron); border-color: var(--terracotta); box-shadow: 0 6px 24px rgba(232,102,10,0.35); }
+.card.focus-card .card-name { color: white; }
+.card.focus-card .card-meta { color: rgba(255,255,255,0.75); }
+.card.focus-card .card-gen { color: rgba(255,255,255,0.6); }
+.card.spouse-card { background: var(--cream-dk); border-color: var(--dust); }
+.card.spouse-card .card-name { color: var(--married-in); }
+.card.parent-card { border-color: var(--dust); opacity: 0.88; }
+.card.child-card { min-width: 88px; max-width: 115px; padding: 9px 11px; }
+.card.child-card:active { border-color: var(--saffron-lt); }
+.card.needs-review { border-color: #F59E0B !important; border-style: dashed !important; }
+.card-gen { position: absolute; top: 5px; right: 8px; font-size: 0.56rem; color: var(--dust); font-weight: 500; }
+.card-name { font-family: 'Playfair Display', serif; font-size: 0.84rem; font-weight: 600; color: var(--text-dark); line-height: 1.3; }
+.card.child-card .card-name { font-size: 0.76rem; }
+.card-meta { font-size: 0.63rem; color: var(--text-soft); margin-top: 4px; }
+.card.child-card .card-meta { display: none; }
 
-  /* Tooltip */
-  #tooltip {
-    position: fixed;
-    background: white;
-    border: 1px solid #ddd;
-    border-radius: 10px;
-    padding: 12px 16px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-    max-width: 260px;
-    font-size: 0.85rem;
-    z-index: 300;
-    pointer-events: none;
-    display: none;
-  }
-  #tooltip h3 { font-size: 1rem; color: #8B2E00; margin-bottom: 6px; }
-  #tooltip p  { color: #555; line-height: 1.5; margin-bottom: 2px; }
+/* SIBLINGS */
+#siblings-strip { width: 100%; padding: 6px 4px 0; display: flex; align-items: center; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+#siblings-strip::-webkit-scrollbar { display: none; }
+.sib-label { font-size: 0.6rem; color: var(--text-soft); white-space: nowrap; flex-shrink: 0; }
+.sib-chip { background: var(--cream-dk); border: 1px solid var(--dust); border-radius: 20px; padding: 3px 9px; font-size: 0.62rem; color: var(--text-mid); white-space: nowrap; cursor: pointer; flex-shrink: 0; transition: all 0.15s; }
+.sib-chip:active { background: var(--saffron); color: white; border-color: var(--saffron); }
 
-  /* Modal */
-  #modal-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
-    z-index: 400; display: none; align-items: center; justify-content: center;
-  }
-  #modal-overlay.open { display: flex; }
-  #modal {
-    background: white; border-radius: 16px;
-    padding: 28px; width: 90%; max-width: 480px;
-    max-height: 85vh; overflow-y: auto;
-    box-shadow: 0 8px 40px rgba(0,0,0,0.3);
-  }
-  #modal h2 { color: #8B2E00; font-size: 1.3rem; margin-bottom: 4px; }
-  #modal .subtitle { color: #888; font-size: 0.8rem; margin-bottom: 20px; }
-  .modal-field { margin-bottom: 14px; }
-  .modal-field label { display: block; font-size: 0.8rem; color: #666; margin-bottom: 4px; font-weight: 600; }
-  .modal-field input, .modal-field textarea, .modal-field select {
-    width: 100%; padding: 8px 12px;
-    border: 1px solid #ddd; border-radius: 8px;
-    font-size: 0.9rem; outline: none;
-    font-family: inherit;
-  }
-  .modal-field input:focus, .modal-field textarea:focus {
-    border-color: #C0622A;
-  }
-  .modal-tabs { display: flex; gap: 0; margin-bottom: 20px; border-bottom: 2px solid #eee; }
-  .modal-tab {
-    padding: 8px 16px; cursor: pointer; font-size: 0.85rem;
-    border-bottom: 2px solid transparent; margin-bottom: -2px;
-    color: #888;
-  }
-  .modal-tab.active { color: #8B2E00; border-bottom-color: #8B2E00; font-weight: 600; }
-  .tab-panel { display: none; }
-  .tab-panel.active { display: block; }
-  .btn-submit {
-    background: #8B2E00; color: white;
-    border: none; border-radius: 8px;
-    padding: 10px 24px; cursor: pointer;
-    font-size: 0.9rem; width: 100%; margin-top: 8px;
-  }
-  .btn-submit:hover { background: #C0622A; }
-  .btn-close {
-    float: right; background: none; border: none;
-    font-size: 1.4rem; cursor: pointer; color: #999;
-  }
-  .info-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f0f0f0; }
-  .info-row:last-child { border-bottom: none; }
-  .info-label { color: #888; font-size: 0.82rem; }
-  .info-value { font-size: 0.85rem; font-weight: 500; }
-  .badge {
-    display: inline-block; padding: 2px 8px;
-    border-radius: 12px; font-size: 0.72rem; font-weight: 600;
-  }
-  .badge-blood { background: #fff0e6; color: #8B2E00; }
-  .badge-married { background: #e8f4ff; color: #1a5276; }
-  .badge-review { background: #fff3cd; color: #856404; }
+/* CHILDREN */
+#children-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; width: 100%; padding: 0 8px; margin-top: 2px; }
 
-  /* Node styles */
-  .node-male   { fill: #D4856A; }
-  .node-female { fill: #E8A87C; }
-  .node-married-in { opacity: 0.75; }
-  .node-highlight { stroke: #FFD700 !important; stroke-width: 3px !important; }
-  .node-review { stroke: #FFA500 !important; stroke-width: 2px !important; stroke-dasharray: 4; }
+/* DRAWER */
+#drawer-overlay { position: fixed; inset: 0; z-index: 100; background: rgba(44,26,14,0.4); display: none; }
+#drawer-overlay.open { display: block; }
+#drawer { position: fixed; bottom: 0; left: 0; right: 0; z-index: 101; background: var(--drawer-bg); border-radius: 24px 24px 0 0; padding: 0 0 40px; max-height: 82dvh; overflow-y: auto; transform: translateY(100%); transition: transform 0.32s cubic-bezier(0.32,0.72,0,1); box-shadow: 0 -8px 40px var(--shadow-lg); }
+#drawer.open { transform: translateY(0); }
+.d-handle { width: 36px; height: 4px; background: var(--dust); border-radius: 2px; margin: 12px auto 8px; }
+.d-header { padding: 8px 20px 16px; border-bottom: 1px solid var(--cream-dk); }
+.d-name { font-family: 'Playfair Display', serif; font-size: 1.25rem; font-weight: 700; color: var(--text-dark); }
+.d-sub { font-size: 0.76rem; color: var(--text-soft); margin-top: 4px; }
+.d-badges { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.badge { padding: 3px 10px; border-radius: 20px; font-size: 0.67rem; font-weight: 500; }
+.badge-blood { background: #FFF0E6; color: var(--saffron); }
+.badge-married { background: #F0EDE8; color: var(--married-in); }
+.badge-review { background: #FEF3C7; color: #92400E; }
+.badge-deceased { background: #F3F4F6; color: #6B7280; }
+.d-tabs { display: flex; border-bottom: 2px solid var(--cream-dk); margin: 0 20px 16px; }
+.d-tab { flex: 1; padding: 10px 4px; text-align: center; font-size: 0.76rem; color: var(--text-soft); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; }
+.d-tab.active { color: var(--saffron); border-bottom-color: var(--saffron); font-weight: 600; }
+.tab-p { display: none; padding: 0 20px; }
+.tab-p.active { display: block; }
+.info-row { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid var(--cream-dk); font-size: 0.83rem; }
+.info-row:last-child { border-bottom: none; }
+.info-lbl { color: var(--text-soft); }
+.info-val { color: var(--text-dark); font-weight: 500; text-align: right; max-width: 58%; }
+.cmt-card { background: white; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; box-shadow: 0 1px 6px var(--shadow); }
+.cmt-author { font-size: 0.76rem; font-weight: 600; }
+.cmt-text { font-size: 0.8rem; color: var(--text-mid); margin-top: 3px; line-height: 1.5; }
+.cmt-date { font-size: 0.67rem; color: var(--text-soft); margin-top: 3px; }
+.f-field { margin-bottom: 12px; }
+.f-field label { display: block; font-size: 0.71rem; color: var(--text-soft); margin-bottom: 4px; font-weight: 500; }
+.f-field input, .f-field textarea, .f-field select { width: 100%; padding: 10px 12px; border: 1.5px solid var(--cream-dk); border-radius: 10px; font-size: 0.86rem; font-family: 'DM Sans', sans-serif; background: white; outline: none; color: var(--text-dark); }
+.f-field input:focus, .f-field textarea:focus { border-color: var(--saffron); }
+.f-field textarea { resize: none; }
+.btn-sub { width: 100%; padding: 13px; background: var(--saffron); color: white; border: none; border-radius: 12px; font-size: 0.9rem; font-weight: 600; font-family: 'DM Sans', sans-serif; cursor: pointer; margin-top: 4px; }
+.btn-sub:active { background: var(--terracotta); }
 
-  /* Mobile bottom bar */
-  #mobile-hint {
-    position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%);
-    background: rgba(0,0,0,0.6); color: white;
-    padding: 6px 16px; border-radius: 20px;
-    font-size: 0.75rem; pointer-events: none;
-    opacity: 1; transition: opacity 1s;
-  }
+/* ANIMATIONS */
+@keyframes slideUp   { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-18px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeScale { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+.au { animation: slideUp   0.28s cubic-bezier(0.22,1,0.36,1) both; }
+.ad { animation: slideDown 0.28s cubic-bezier(0.22,1,0.36,1) both; }
+.af { animation: fadeScale 0.22s ease both; }
+#children-row .card:nth-child(1){animation-delay:0.04s}
+#children-row .card:nth-child(2){animation-delay:0.08s}
+#children-row .card:nth-child(3){animation-delay:0.12s}
+#children-row .card:nth-child(4){animation-delay:0.16s}
+#children-row .card:nth-child(5){animation-delay:0.20s}
+#children-row .card:nth-child(6){animation-delay:0.24s}
+
+/* LOADING */
+#loading { position: fixed; inset: 0; z-index: 300; background: var(--cream); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
+.spin-ring { width: 42px; height: 42px; border: 3px solid var(--cream-dk); border-top-color: var(--saffron); border-radius: 50%; animation: spin 0.7s linear infinite; }
+.load-title { font-family: 'Playfair Display', serif; font-size: 1rem; color: var(--saffron); }
+.load-sub { font-size: 0.74rem; color: var(--text-soft); }
+
+@media(min-width:600px){
+  .card { min-width: 128px; max-width: 175px; }
+  .card.child-card { min-width: 105px; max-width: 138px; }
+  #drawer { max-width: 460px; left: 50%; right: auto; transform: translateX(-50%) translateY(100%); }
+  #drawer.open { transform: translateX(-50%) translateY(0); }
+  #drawer-overlay.open { display: block; }
+}
 </style>
 </head>
 <body>
 
-<!-- Loading -->
 <div id="loading">
-  <div class="spinner"></div>
-  <p style="color:#8B2E00;font-size:1rem;font-weight:600;">Loading Khare Family Tree…</p>
-  <p style="color:#aaa;font-size:0.8rem;margin-top:6px;">खरे परिवार</p>
+  <div class="spin-ring"></div>
+  <p class="load-title">🌳 Khare Family Tree</p>
+  <p class="load-sub">खरे परिवार वृक्ष</p>
 </div>
 
-<!-- Header -->
 <div id="header">
-  <div>
+  <div id="header-title">
     <h1>🌳 Khare Family Tree</h1>
-    <p>खरे परिवार — 8 Generations</p>
+    <p>खरे परिवार वृक्ष</p>
   </div>
-  <div id="controls">
-    <input id="search-box" type="text" placeholder="Search name…" oninput="searchTree(this.value)">
-    <button onclick="zoomIn()">＋</button>
-    <button onclick="zoomOut()">－</button>
-    <button onclick="resetView()">⌂</button>
-  </div>
+  <button id="search-btn" onclick="openSearch()">🔍</button>
 </div>
 
-<!-- Tree Canvas -->
-<div id="canvas-wrap">
-  <svg id="tree-svg"></svg>
+<div id="breadcrumb"></div>
+
+<div id="search-overlay">
+  <div id="search-input-wrap">
+    <span>🔍</span>
+    <input id="search-input" type="text" placeholder="Search family member…" oninput="doSearch(this.value)" autocomplete="off">
+    <button id="search-close" onclick="closeSearch()">✕</button>
+  </div>
+  <div id="search-results"></div>
 </div>
 
-<!-- Tooltip -->
-<div id="tooltip"></div>
+<div id="canvas">
+  <div id="row-parent" style="display:flex;justify-content:center;width:100%"></div>
+  <div id="conn-top" class="conn-v" style="display:none"></div>
+  <div id="row-focus" style="display:flex;justify-content:center;width:100%"></div>
+  <div id="siblings-strip" style="display:none"></div>
+  <div id="conn-mid" class="conn-v" style="display:none"></div>
+  <div id="children-row"></div>
+</div>
 
-<!-- Person Modal -->
-<div id="modal-overlay" onclick="closeModal(event)">
-  <div id="modal">
-    <button class="btn-close" onclick="closeModalDirect()">×</button>
-    <h2 id="modal-name"></h2>
-    <p class="subtitle" id="modal-subtitle"></p>
-    <div class="modal-tabs">
-      <div class="modal-tab active" onclick="switchTab('info')">Info</div>
-      <div class="modal-tab" onclick="switchTab('comment')">💬 Comment</div>
-      <div class="modal-tab" onclick="switchTab('suggest')">✏️ Suggest Edit</div>
+<div id="drawer-overlay" onclick="closeDrawer()"></div>
+<div id="drawer">
+  <div class="d-handle"></div>
+  <div class="d-header">
+    <div class="d-name" id="d-name"></div>
+    <div class="d-sub" id="d-sub"></div>
+    <div class="d-badges" id="d-badges"></div>
+  </div>
+  <div class="d-tabs">
+    <div class="d-tab active" onclick="switchTab('info')">Info</div>
+    <div class="d-tab" onclick="switchTab('comment')">💬 Comment</div>
+    <div class="d-tab" onclick="switchTab('suggest')">✏️ Suggest</div>
+  </div>
+  <div id="dp-info" class="tab-p active"></div>
+  <div id="dp-comment" class="tab-p">
+    <div class="f-field"><label>Your Name *</label><input type="text" id="c-name" placeholder="e.g. Priya Khare"></div>
+    <div class="f-field"><label>Email (optional)</label><input type="email" id="c-email"></div>
+    <div class="f-field"><label>Memory or note *</label><textarea id="c-content" rows="4" placeholder="Share a memory…"></textarea></div>
+    <button class="btn-sub" onclick="submitComment()">Post Comment</button>
+  </div>
+  <div id="dp-suggest" class="tab-p">
+    <div class="f-field"><label>Your Name *</label><input type="text" id="s-name"></div>
+    <div class="f-field"><label>Email</label><input type="email" id="s-email"></div>
+    <div class="f-field"><label>Field to correct</label>
+      <select id="s-field" onchange="prefillOld()">
+        <option value="name">Name</option>
+        <option value="current_location">Location</option>
+        <option value="birth_date">Birth Date</option>
+        <option value="death_date">Death Date</option>
+        <option value="notes">Notes</option>
+      </select>
     </div>
-    <div id="tab-info" class="tab-panel active"></div>
-    <div id="tab-comment" class="tab-panel">
-      <div class="modal-field">
-        <label>Your Name</label>
-        <input type="text" id="c-name" placeholder="e.g. Priya Khare">
-      </div>
-      <div class="modal-field">
-        <label>Your Email (optional)</label>
-        <input type="email" id="c-email" placeholder="priya@email.com">
-      </div>
-      <div class="modal-field">
-        <label>Comment</label>
-        <textarea id="c-content" rows="4" placeholder="Share a memory, anecdote, or note about this person…"></textarea>
-      </div>
-      <button class="btn-submit" onclick="submitComment()">Post Comment</button>
-    </div>
-    <div id="tab-suggest" class="tab-panel">
-      <div class="modal-field">
-        <label>Your Name</label>
-        <input type="text" id="s-name" placeholder="e.g. Priya Khare">
-      </div>
-      <div class="modal-field">
-        <label>Your Email</label>
-        <input type="email" id="s-email" placeholder="priya@email.com">
-      </div>
-      <div class="modal-field">
-        <label>Field to correct</label>
-        <select id="s-field">
-          <option value="name">Name</option>
-          <option value="current_location">Location</option>
-          <option value="birth_date">Birth Date</option>
-          <option value="death_date">Death Date</option>
-          <option value="notes">Notes / Biography</option>
-        </select>
-      </div>
-      <div class="modal-field">
-        <label>Current value</label>
-        <input type="text" id="s-old" readonly style="background:#f5f5f5">
-      </div>
-      <div class="modal-field">
-        <label>Correct value</label>
-        <input type="text" id="s-new" placeholder="Enter the correct value">
-      </div>
-      <button class="btn-submit" onclick="submitSuggestion()">Submit Suggestion</button>
-    </div>
+    <div class="f-field"><label>Current value</label><input type="text" id="s-old" readonly style="background:#f9f4ee"></div>
+    <div class="f-field"><label>Correct value *</label><input type="text" id="s-new"></div>
+    <button class="btn-sub" onclick="submitSuggestion()">Submit Suggestion</button>
   </div>
 </div>
-
-<div id="mobile-hint">Pinch to zoom · Drag to pan · Tap a name</div>
 
 <script>
-// ── Config ──────────────────────────────────────────────────
-const SUPABASE_URL = "https://pozpdssxiykixodupanu.supabase.co";
-const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBvenBkc3N4aXlraXhvZHVwYW51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4Mzk5NDMsImV4cCI6MjA5NjQxNTk0M30.3nE59InmMpsczdcay2lRKry9_D0O4aIQZ7xQLEM1BUo";
+const SUPA_URL  = "https://pozpdssxiykixodupanu.supabase.co";
+const SUPA_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBvenBkc3N4aXlraXhvZHVwYW51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4Mzk5NDMsImV4cCI6MjA5NjQxNTk0M30.3nE59InmMpsczdcay2lRKry9_D0O4aIQZ7xQLEM1BUo";
+const H = { "apikey": SUPA_ANON, "Authorization": `Bearer ${SUPA_ANON}` };
 
-const HEADERS = {
-  "apikey": SUPABASE_ANON,
-  "Authorization": `Bearer ${SUPABASE_ANON}`,
-  "Content-Type": "application/json"
-};
+let persons=[], rels=[], comments=[], pMap={};
+let focusId=null, history=[], drawerPid=null, animDir='fade';
 
-// ── State ────────────────────────────────────────────────────
-let persons = [], relationships = [], comments = [];
-let nodes = {}, rendered = false;
-let currentPersonId = null;
-
-// Pan/zoom
-let panX = 0, panY = 0, scale = 1;
-let isPanning = false, startX = 0, startY = 0;
-
-// ── Fetch data ───────────────────────────────────────────────
-async function fetchAll() {
-  const [pRes, rRes, cRes] = await Promise.all([
-    fetch(`${SUPABASE_URL}/rest/v1/persons?select=*&order=generation,birth_order`, { headers: HEADERS }),
-    fetch(`${SUPABASE_URL}/rest/v1/relationships?select=*`, { headers: HEADERS }),
-    fetch(`${SUPABASE_URL}/rest/v1/comments?select=*&status=eq.approved&order=created_at.desc`, { headers: HEADERS }),
+async function fetchAll(){
+  const [pR,rR,cR]=await Promise.all([
+    fetch(`${SUPA_URL}/rest/v1/persons?select=*&order=generation,birth_order`,{headers:H}),
+    fetch(`${SUPA_URL}/rest/v1/relationships?select=*`,{headers:H}),
+    fetch(`${SUPA_URL}/rest/v1/comments?select=*&status=eq.approved&order=created_at.desc`,{headers:H}),
   ]);
-  persons      = await pRes.json();
-  relationships = await rRes.json();
-  comments     = await cRes.json();
+  persons=await pR.json(); rels=await rR.json(); comments=await cR.json();
+  persons.forEach(p=>pMap[p.id]=p);
 }
 
-// ── Layout ───────────────────────────────────────────────────
-const NODE_W = 120, NODE_H = 44, GEN_GAP = 100, SIBLING_GAP = 14;
+function getSpouse(id){
+  const r=rels.find(r=>r.type==='spouse'&&(r.person1_id===id||r.person2_id===id));
+  if(!r)return null;
+  return pMap[r.person1_id===id?r.person2_id:r.person1_id]||null;
+}
+function getParent(id){
+  const r=rels.find(r=>r.type==='parent_child'&&r.person2_id===id);
+  return r?(pMap[r.person1_id]||null):null;
+}
+function getChildren(id){
+  return rels.filter(r=>r.type==='parent_child'&&r.person1_id===id).map(r=>pMap[r.person2_id]).filter(Boolean);
+}
+function getSiblings(id){
+  const p=getParent(id); if(!p)return[];
+  return getChildren(p.id).filter(c=>c.id!==id);
+}
 
-function buildLayout() {
-  // Index persons
-  const byId = {};
-  persons.forEach(p => byId[p.id] = { ...p, children: [], spouseId: null });
+function clean(name){
+  return name.replace(/\s*\([^)]*\s+(son|daughter|husband|wife)\)/gi,'').replace(/^Shrimati\s+/i,'').replace(/^Shri\s+/i,'').trim();
+}
+function short(name){
+  const c=clean(name),w=c.split(' ');
+  return w.length>2?w[0]+' '+w[w.length-1]:c;
+}
 
-  // Map relationships
-  const parentOf = {}; // child_id → parent_id
-  relationships.forEach(r => {
-    if (r.type === "parent_child") {
-      if (!byId[r.person2_id]) return;
-      byId[r.person2_id]._parentId = r.person1_id;
-      if (byId[r.person1_id]) byId[r.person1_id].children.push(r.person2_id);
-    }
-    if (r.type === "spouse") {
-      if (byId[r.person1_id]) byId[r.person1_id].spouseId = r.person2_id;
-      if (byId[r.person2_id]) byId[r.person2_id].spouseId = r.person1_id;
-    }
+function makeCard(p,type){
+  const d=document.createElement('div');
+  d.className=`card ${type}-card${p.needs_review?' needs-review':''}`;
+  const ac=animDir==='down'?'au':animDir==='up'?'ad':'af';
+  d.classList.add(ac);
+  d.innerHTML=`<div class="card-gen">G${p.generation??'?'}</div><div class="card-name">${short(p.name)}</div>${p.current_location&&type!=='child'?`<div class="card-meta">📍 ${p.current_location}</div>`:''}`;
+
+  // long press → drawer
+  let pt; 
+  d.addEventListener('touchstart',()=>{pt=setTimeout(()=>openDrawer(p.id),500)},{passive:true});
+  d.addEventListener('touchend',()=>clearTimeout(pt));
+  d.addEventListener('touchmove',()=>clearTimeout(pt));
+
+  if(type==='parent') d.addEventListener('click',()=>navTo(p.id,'up'));
+  else if(type==='child') d.addEventListener('click',()=>navTo(p.id,'down'));
+  else d.addEventListener('click',()=>openDrawer(p.id));
+  return d;
+}
+
+function navTo(id,dir){
+  animDir=dir;
+  if(dir==='down') history.push(focusId);
+  else if(dir==='up'){
+    const idx=history.indexOf(id);
+    history=idx!==-1?history.slice(0,idx):history.slice(0,-1);
+  }
+  focusId=id;
+  renderFocus();
+  renderBC();
+}
+
+function renderBC(){
+  const bc=document.getElementById('breadcrumb');
+  bc.innerHTML='';
+  [...history,focusId].filter(Boolean).forEach((id,i,arr)=>{
+    const p=pMap[id]; if(!p)return;
+    if(i>0){const s=document.createElement('span');s.className='bc-sep';s.textContent='›';bc.appendChild(s);}
+    const el=document.createElement('span');
+    el.className='bc-item'+(i===arr.length-1?' active':'');
+    el.textContent=short(p.name);
+    if(i<arr.length-1) el.addEventListener('click',()=>navTo(id,'up'));
+    bc.appendChild(el);
   });
+  bc.scrollLeft=bc.scrollWidth;
+}
 
-  // Group by generation
-  const gens = {};
-  persons.forEach(p => {
-    const g = p.generation ?? 0;
-    if (!gens[g]) gens[g] = [];
-    gens[g].push(p.id);
-  });
+function renderFocus(){
+  const focus=pMap[focusId]; if(!focus)return;
+  const parent=getParent(focusId);
+  const spouse=getSpouse(focusId);
+  const children=getChildren(focusId);
+  const siblings=getSiblings(focusId);
 
-  const genNums = Object.keys(gens).map(Number).sort((a,b) => a-b);
+  // parent
+  const rp=document.getElementById('row-parent');
+  rp.innerHTML='';
+  const ct=document.getElementById('conn-top');
+  if(parent){rp.appendChild(makeCard(parent,'parent'));ct.style.display='block';}
+  else ct.style.display='none';
 
-  // Assign Y by generation
-  genNums.forEach(g => {
-    gens[g].forEach(id => {
-      if (byId[id]) byId[id]._y = g * GEN_GAP + 80;
+  // focus + spouse
+  const rf=document.getElementById('row-focus');
+  rf.innerHTML='';
+  const pair=document.createElement('div');
+  pair.className='card-pair';
+  pair.appendChild(makeCard(focus,'focus'));
+  if(spouse){
+    const line=document.createElement('div');line.className='spouse-line';
+    pair.appendChild(line);
+    pair.appendChild(makeCard(spouse,'spouse'));
+  }
+  rf.appendChild(pair);
+
+  // siblings
+  const ss=document.getElementById('siblings-strip');
+  ss.innerHTML='';
+  if(siblings.length){
+    ss.style.display='flex';
+    const lbl=document.createElement('span');lbl.className='sib-label';lbl.textContent='Siblings:';ss.appendChild(lbl);
+    siblings.forEach(s=>{
+      const ch=document.createElement('div');ch.className='sib-chip';ch.textContent=short(s.name);
+      ch.addEventListener('click',()=>{animDir='fade';history=buildPath(s.id);focusId=s.id;renderFocus();renderBC();});
+      ss.appendChild(ch);
     });
-  });
+  } else ss.style.display='none';
 
-  // Assign X: simple left-to-right per generation with spacing
-  const unitW = NODE_W + SIBLING_GAP;
-  genNums.forEach(g => {
-    const ids = gens[g];
-    const totalW = ids.length * unitW;
-    ids.forEach((id, i) => {
-      if (byId[id]) byId[id]._x = i * unitW - totalW / 2 + unitW / 2;
-    });
-  });
-
-  nodes = byId;
-  return { genNums, gens };
+  // children
+  const cr=document.getElementById('children-row');
+  cr.innerHTML='';
+  const cm=document.getElementById('conn-mid');
+  if(children.length){
+    cm.style.display='block';
+    children.forEach(c=>cr.appendChild(makeCard(c,'child')));
+  } else cm.style.display='none';
 }
 
-// ── Render SVG ───────────────────────────────────────────────
-function renderTree() {
-  const svg = document.getElementById("tree-svg");
-  const wrap = document.getElementById("canvas-wrap");
-  const W = wrap.clientWidth, H = wrap.clientHeight;
-
-  svg.setAttribute("width", W);
-  svg.setAttribute("height", H);
-  svg.innerHTML = "";
-
-  const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-  g.setAttribute("id", "root-g");
-  svg.appendChild(g);
-
-  // Lines first
-  const linesG = document.createElementNS("http://www.w3.org/2000/svg", "g");
-  linesG.setAttribute("id", "lines");
-  g.appendChild(linesG);
-
-  relationships.forEach(r => {
-    if (r.type !== "parent_child") return;
-    const parent = nodes[r.person1_id];
-    const child  = nodes[r.person2_id];
-    if (!parent || !child) return;
-
-    const px = parent._x + W/2, py = parent._y + NODE_H;
-    const cx = child._x  + W/2, cy = child._y;
-    const my = (py + cy) / 2;
-
-    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    path.setAttribute("d", `M${px},${py} C${px},${my} ${cx},${my} ${cx},${cy}`);
-    path.setAttribute("fill", "none");
-    path.setAttribute("stroke", "#C0622A55");
-    path.setAttribute("stroke-width", "1.5");
-    linesG.appendChild(path);
-  });
-
-  // Spouse lines
-  relationships.forEach(r => {
-    if (r.type !== "spouse") return;
-    const p1 = nodes[r.person1_id], p2 = nodes[r.person2_id];
-    if (!p1 || !p2) return;
-    if (Math.abs(p1._y - p2._y) > 10) return; // skip if different gen
-
-    const x1 = p1._x + W/2 + NODE_W/2;
-    const x2 = p2._x + W/2 - NODE_W/2;
-    const y  = p1._y + NODE_H/2;
-
-    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    line.setAttribute("x1", x1); line.setAttribute("y1", y);
-    line.setAttribute("x2", x2); line.setAttribute("y2", y);
-    line.setAttribute("stroke", "#aaa");
-    line.setAttribute("stroke-width", "1.5");
-    line.setAttribute("stroke-dasharray", "4 3");
-    linesG.appendChild(line);
-  });
-
-  // Nodes
-  const nodesG = document.createElementNS("http://www.w3.org/2000/svg", "g");
-  nodesG.setAttribute("id", "nodes");
-  g.appendChild(nodesG);
-
-  Object.values(nodes).forEach(p => {
-    const nx = p._x + W/2 - NODE_W/2;
-    const ny = p._y;
-    const isFemale = p.gender === "F";
-    const isBlood  = p.blood_member !== false;
-    const needsReview = p.needs_review;
-
-    const nodeG = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    nodeG.setAttribute("class", "person-node");
-    nodeG.setAttribute("data-id", p.id);
-    nodeG.style.cursor = "pointer";
-
-    // Rect
-    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    rect.setAttribute("x", nx); rect.setAttribute("y", ny);
-    rect.setAttribute("width", NODE_W); rect.setAttribute("height", NODE_H);
-    rect.setAttribute("rx", isFemale ? "22" : "6");
-    rect.setAttribute("fill", isFemale ? "#E8A87C" : "#D4856A");
-    rect.setAttribute("opacity", isBlood ? "1" : "0.65");
-    rect.setAttribute("stroke", needsReview ? "#FFA500" : "white");
-    rect.setAttribute("stroke-width", needsReview ? "2" : "1.5");
-    if (needsReview) rect.setAttribute("stroke-dasharray", "4");
-
-    // Name text
-    const displayName = p.name.replace(/^Shrimati\s+/i, "").replace(/^Shri\s+/i, "");
-    const words = displayName.split(" ");
-    const line1 = words.slice(0, 2).join(" ");
-    const line2 = words.slice(2).join(" ");
-
-    const text1 = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    text1.setAttribute("x", nx + NODE_W/2);
-    text1.setAttribute("y", ny + (line2 ? 16 : 24));
-    text1.setAttribute("text-anchor", "middle");
-    text1.setAttribute("fill", "white");
-    text1.setAttribute("font-size", "11");
-    text1.setAttribute("font-weight", "600");
-    text1.setAttribute("font-family", "Segoe UI, Arial, sans-serif");
-    text1.textContent = line1;
-
-    nodeG.appendChild(rect);
-    nodeG.appendChild(text1);
-
-    if (line2) {
-      const text2 = document.createElementNS("http://www.w3.org/2000/svg", "text");
-      text2.setAttribute("x", nx + NODE_W/2);
-      text2.setAttribute("y", ny + 30);
-      text2.setAttribute("text-anchor", "middle");
-      text2.setAttribute("fill", "white");
-      text2.setAttribute("font-size", "10");
-      text2.setAttribute("font-family", "Segoe UI, Arial, sans-serif");
-      text2.textContent = line2;
-      nodeG.appendChild(text2);
-    }
-
-    // Generation badge
-    const genBadge = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    genBadge.setAttribute("x", nx + 4);
-    genBadge.setAttribute("y", ny + 10);
-    genBadge.setAttribute("fill", "rgba(255,255,255,0.7)");
-    genBadge.setAttribute("font-size", "8");
-    genBadge.textContent = `G${p.generation}`;
-    nodeG.appendChild(genBadge);
-
-    // Events
-    nodeG.addEventListener("mouseenter", (e) => showTooltip(e, p));
-    nodeG.addEventListener("mouseleave", hideTooltip);
-    nodeG.addEventListener("click", () => openModal(p.id));
-
-    nodesG.appendChild(nodeG);
-  });
-
-  applyTransform();
-  rendered = true;
+function buildPath(targetId){
+  const chain=[]; let cur=targetId;
+  for(let i=0;i<20;i++){const p=getParent(cur);if(!p)break;chain.unshift(p.id);cur=p.id;}
+  return chain;
 }
 
-function applyTransform() {
-  const g = document.getElementById("root-g");
-  if (g) g.setAttribute("transform", `translate(${panX},${panY}) scale(${scale})`);
+function findRoot(){
+  const hasParent=new Set(rels.filter(r=>r.type==='parent_child').map(r=>r.person2_id));
+  return persons.filter(p=>!hasParent.has(p.id)).sort((a,b)=>(a.generation??99)-(b.generation??99))[0];
 }
 
-// ── Pan / Zoom ───────────────────────────────────────────────
-const wrap = document.getElementById("canvas-wrap");
-
-wrap.addEventListener("mousedown", e => {
-  isPanning = true; startX = e.clientX - panX; startY = e.clientY - panY;
-});
-wrap.addEventListener("mousemove", e => {
-  if (!isPanning) return;
-  panX = e.clientX - startX; panY = e.clientY - startY;
-  applyTransform();
-});
-wrap.addEventListener("mouseup", () => isPanning = false);
-wrap.addEventListener("mouseleave", () => isPanning = false);
-
-wrap.addEventListener("wheel", e => {
-  e.preventDefault();
-  const delta = e.deltaY > 0 ? 0.9 : 1.1;
-  scale = Math.max(0.3, Math.min(3, scale * delta));
-  applyTransform();
-}, { passive: false });
-
-// Touch
-let lastDist = 0;
-wrap.addEventListener("touchstart", e => {
-  if (e.touches.length === 1) {
-    isPanning = true;
-    startX = e.touches[0].clientX - panX;
-    startY = e.touches[0].clientY - panY;
-  } else if (e.touches.length === 2) {
-    lastDist = Math.hypot(
-      e.touches[0].clientX - e.touches[1].clientX,
-      e.touches[0].clientY - e.touches[1].clientY
-    );
-  }
-}, { passive: true });
-wrap.addEventListener("touchmove", e => {
-  if (e.touches.length === 1 && isPanning) {
-    panX = e.touches[0].clientX - startX;
-    panY = e.touches[0].clientY - startY;
-    applyTransform();
-  } else if (e.touches.length === 2) {
-    const dist = Math.hypot(
-      e.touches[0].clientX - e.touches[1].clientX,
-      e.touches[0].clientY - e.touches[1].clientY
-    );
-    scale = Math.max(0.3, Math.min(3, scale * (dist / lastDist)));
-    lastDist = dist;
-    applyTransform();
-  }
-}, { passive: true });
-wrap.addEventListener("touchend", () => isPanning = false);
-
-function zoomIn()    { scale = Math.min(3, scale * 1.2); applyTransform(); }
-function zoomOut()   { scale = Math.max(0.3, scale * 0.85); applyTransform(); }
-function resetView() { panX = 0; panY = 0; scale = 0.85; applyTransform(); }
-
-// ── Tooltip ──────────────────────────────────────────────────
-const tooltip = document.getElementById("tooltip");
-
-function showTooltip(e, p) {
-  const loc = p.current_location || "—";
-  const gen = `Generation ${p.generation}`;
-  const blood = p.blood_member !== false ? "Khare bloodline 🩸" : "Married in 💍";
-  tooltip.innerHTML = `
-    <h3>${p.name}</h3>
-    <p>📍 ${loc}</p>
-    <p>🌿 ${gen}</p>
-    <p>${blood}</p>
-    ${p.needs_review ? '<p style="color:#FFA500">⚠️ Needs review</p>' : ''}
-  `;
-  tooltip.style.display = "block";
-  moveTooltip(e);
-}
-function moveTooltip(e) {
-  let x = e.clientX + 16, y = e.clientY + 10;
-  if (x + 270 > window.innerWidth)  x = e.clientX - 270;
-  if (y + 140 > window.innerHeight) y = e.clientY - 140;
-  tooltip.style.left = x + "px";
-  tooltip.style.top  = y + "px";
-}
-function hideTooltip() { tooltip.style.display = "none"; }
-wrap.addEventListener("mousemove", e => { if (tooltip.style.display === "block") moveTooltip(e); });
-
-// ── Search ───────────────────────────────────────────────────
-function searchTree(query) {
-  const q = query.toLowerCase().trim();
-  document.querySelectorAll(".person-node").forEach(el => {
-    const id = el.getAttribute("data-id");
-    const p  = nodes[id];
-    if (!p) return;
-    const match = !q || p.name.toLowerCase().includes(q);
-    el.style.opacity = match ? "1" : "0.2";
+// SEARCH
+function openSearch(){document.getElementById('search-overlay').classList.add('open');setTimeout(()=>document.getElementById('search-input').focus(),80);}
+function closeSearch(){document.getElementById('search-overlay').classList.remove('open');document.getElementById('search-input').value='';document.getElementById('search-results').innerHTML='';}
+function doSearch(q){
+  const res=document.getElementById('search-results'); res.innerHTML='';
+  if(!q.trim())return;
+  const m=persons.filter(p=>p.name.toLowerCase().includes(q.toLowerCase())||(p.current_location||'').toLowerCase().includes(q.toLowerCase())).slice(0,12);
+  if(!m.length){res.innerHTML=`<div style="color:white;text-align:center;padding:20px;font-size:0.85rem">No results</div>`;return;}
+  m.forEach(p=>{
+    const el=document.createElement('div');el.className='search-result-item';
+    el.innerHTML=`<div style="flex:1"><div class="sri-name">${clean(p.name)}</div><div class="sri-meta">Gen ${p.generation??'?'}${p.current_location?' · '+p.current_location:''}</div></div><div style="font-size:0.75rem">${p.blood_member?'🩸':'💍'}</div>`;
+    el.addEventListener('click',()=>{closeSearch();history=buildPath(p.id);focusId=p.id;animDir='fade';renderFocus();renderBC();});
+    res.appendChild(el);
   });
 }
 
-// ── Modal ────────────────────────────────────────────────────
-function openModal(id) {
-  currentPersonId = id;
-  const p = nodes[id];
-  if (!p) return;
+// DRAWER
+function openDrawer(id){
+  drawerPid=id; const p=pMap[id]; if(!p)return;
+  document.getElementById('d-name').textContent=clean(p.name);
+  document.getElementById('d-sub').textContent=`Generation ${p.generation??'?'} · ${p.blood_member?'Khare bloodline':'Married in'}`;
+  const db=document.getElementById('d-badges');
+  db.innerHTML=(p.blood_member?`<span class="badge badge-blood">🩸 Khare</span>`:`<span class="badge badge-married">💍 Married in</span>`)+(p.is_alive===false?`<span class="badge badge-deceased">🕊️ Deceased</span>`:'')+( p.needs_review?`<span class="badge badge-review">⚠️ Review</span>`:'');
 
-  document.getElementById("modal-name").textContent = p.name;
-  document.getElementById("modal-subtitle").textContent =
-    `Generation ${p.generation} · ${p.blood_member !== false ? "Khare bloodline" : "Married in"}`;
+  const spouse=getSpouse(id),parent=getParent(id),children=getChildren(id);
+  const pc=comments.filter(c=>c.person_id===id);
+  const rows=[['Name',clean(p.name)],['Gender',p.gender==='M'?'♂ Male':p.gender==='F'?'♀ Female':'—'],['Generation',`Gen ${p.generation??'?'}`],['Location',p.current_location||'—'],['Birth date',p.birth_date||'—'],['Status',p.is_alive!==false?'Living':'Deceased'],['Lineage',p.blood_member?'Khare bloodline':'Married in']];
+  if(spouse)rows.push(['Spouse',clean(spouse.name)]);
+  if(parent)rows.push(['Parent',clean(parent.name)]);
+  if(children.length)rows.push(['Children',children.map(c=>short(c.name)).join(', ')]);
+  if(p.notes)rows.push(['Notes',p.notes]);
 
-  // Find relatives
-  const spouseRel = relationships.find(r =>
-    r.type === "spouse" && (r.person1_id === id || r.person2_id === id)
-  );
-  const spouseId  = spouseRel ? (spouseRel.person1_id === id ? spouseRel.person2_id : spouseRel.person1_id) : null;
-  const spouse    = spouseId ? nodes[spouseId] : null;
-
-  const parentRel = relationships.find(r => r.type === "parent_child" && r.person2_id === id);
-  const parent    = parentRel ? nodes[parentRel.person1_id] : null;
-
-  const children  = relationships
-    .filter(r => r.type === "parent_child" && r.person1_id === id)
-    .map(r => nodes[r.person2_id])
-    .filter(Boolean);
-
-  // Person comments
-  const personComments = comments.filter(c => c.person_id === id);
-
-  document.getElementById("tab-info").innerHTML = `
-    <div class="info-row"><span class="info-label">Name</span><span class="info-value">${p.name}</span></div>
-    <div class="info-row"><span class="info-label">Gender</span><span class="info-value">${p.gender === "M" ? "Male" : p.gender === "F" ? "Female" : "—"}</span></div>
-    <div class="info-row"><span class="info-label">Generation</span><span class="info-value">${p.generation}</span></div>
-    <div class="info-row"><span class="info-label">Location</span><span class="info-value">${p.current_location || "—"}</span></div>
-    <div class="info-row"><span class="info-label">Status</span><span class="info-value">${p.is_alive !== false ? "Living" : "Deceased"}</span></div>
-    <div class="info-row"><span class="info-label">Lineage</span>
-      <span class="info-value">
-        <span class="badge ${p.blood_member !== false ? 'badge-blood' : 'badge-married'}">${p.blood_member !== false ? "🩸 Khare" : "💍 Married in"}</span>
-        ${p.needs_review ? '<span class="badge badge-review">⚠️ Needs review</span>' : ''}
-      </span>
-    </div>
-    ${parent ? `<div class="info-row"><span class="info-label">Parent</span><span class="info-value" style="cursor:pointer;color:#8B2E00" onclick="closeModalDirect();openModal('${parent.id}')">${parent.name}</span></div>` : ""}
-    ${spouse ? `<div class="info-row"><span class="info-label">Spouse</span><span class="info-value" style="cursor:pointer;color:#8B2E00" onclick="closeModalDirect();openModal('${spouse.id}')">${spouse.name}</span></div>` : ""}
-    ${children.length ? `<div class="info-row"><span class="info-label">Children</span><span class="info-value">${children.map(c => `<span style="cursor:pointer;color:#8B2E00;margin-right:8px" onclick="closeModalDirect();openModal('${c.id}')">${c.name}</span>`).join("")}</span></div>` : ""}
-    ${p.notes ? `<div class="info-row"><span class="info-label">Notes</span><span class="info-value">${p.notes}</span></div>` : ""}
-    ${personComments.length ? `
-      <div style="margin-top:16px">
-        <p style="font-size:0.8rem;color:#888;margin-bottom:8px">💬 Comments (${personComments.length})</p>
-        ${personComments.map(c => `
-          <div style="background:#f9f9f9;border-radius:8px;padding:8px 12px;margin-bottom:6px">
-            <p style="font-size:0.82rem;font-weight:600">${c.commenter_name}</p>
-            <p style="font-size:0.82rem;color:#555">${c.content}</p>
-            <p style="font-size:0.72rem;color:#aaa">${c.created_at?.slice(0,10)}</p>
-          </div>`).join("")}
-      </div>` : ""}
-  `;
-
-  // Pre-fill suggest old value
-  document.getElementById("s-old").value = "";
-  document.getElementById("s-field").onchange = function() {
-    const field = this.value;
-    document.getElementById("s-old").value = p[field] || "";
-  };
-
-  switchTab("info");
-  document.getElementById("modal-overlay").classList.add("open");
+  let html=rows.map(([l,v])=>`<div class="info-row"><span class="info-lbl">${l}</span><span class="info-val">${v}</span></div>`).join('');
+  if(pc.length) html+=`<div style="margin-top:16px"><div style="font-size:0.67rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-soft);margin-bottom:8px">💬 Comments</div>${pc.map(c=>`<div class="cmt-card"><div class="cmt-author">${c.commenter_name}</div><div class="cmt-text">${c.content}</div><div class="cmt-date">${c.created_at?.slice(0,10)}</div></div>`).join('')}</div>`;
+  document.getElementById('dp-info').innerHTML=html;
+  prefillOld();
+  switchTab('info');
+  document.getElementById('drawer-overlay').classList.add('open');
+  document.getElementById('drawer').classList.add('open');
+}
+function closeDrawer(){document.getElementById('drawer').classList.remove('open');document.getElementById('drawer-overlay').classList.remove('open');}
+function switchTab(n){
+  document.querySelectorAll('.d-tab').forEach((t,i)=>t.classList.toggle('active',['info','comment','suggest'][i]===n));
+  document.querySelectorAll('.tab-p').forEach(p=>p.classList.remove('active'));
+  document.getElementById(`dp-${n}`).classList.add('active');
+}
+function prefillOld(){
+  if(!drawerPid)return; const p=pMap[drawerPid]; if(!p)return;
+  const f=document.getElementById('s-field')?.value;
+  if(f)document.getElementById('s-old').value=p[f]||'';
 }
 
-function closeModal(e) {
-  if (e.target === document.getElementById("modal-overlay")) closeModalDirect();
+async function submitComment(){
+  const name=document.getElementById('c-name').value.trim(),email=document.getElementById('c-email').value.trim(),content=document.getElementById('c-content').value.trim();
+  if(!name||!content){alert('Name and comment are required.');return;}
+  const r=await fetch(`${SUPA_URL}/rest/v1/comments`,{method:'POST',headers:{...H,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({person_id:drawerPid,commenter_name:name,commenter_email:email,content,status:'pending'})});
+  if(r.ok){alert('✅ Comment submitted!');document.getElementById('c-name').value='';document.getElementById('c-content').value='';closeDrawer();}
+  else alert('Something went wrong.');
 }
-function closeModalDirect() {
-  document.getElementById("modal-overlay").classList.remove("open");
-  currentPersonId = null;
-}
-
-function switchTab(name) {
-  document.querySelectorAll(".modal-tab").forEach((t, i) => {
-    const names = ["info", "comment", "suggest"];
-    t.classList.toggle("active", names[i] === name);
-  });
-  document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
-  document.getElementById(`tab-${name}`).classList.add("active");
+async function submitSuggestion(){
+  const name=document.getElementById('s-name').value.trim(),email=document.getElementById('s-email').value.trim(),field=document.getElementById('s-field').value,old_v=document.getElementById('s-old').value,new_v=document.getElementById('s-new').value.trim();
+  if(!name||!new_v){alert('Name and correct value required.');return;}
+  const r=await fetch(`${SUPA_URL}/rest/v1/change_requests`,{method:'POST',headers:{...H,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({person_id:drawerPid,requested_by_name:name,requested_by_email:email,field_name:field,old_value:old_v,new_value:new_v,status:'pending'})});
+  if(r.ok){alert('✅ Suggestion submitted!');document.getElementById('s-new').value='';closeDrawer();}
+  else alert('Something went wrong.');
 }
 
-// ── Submit comment ───────────────────────────────────────────
-async function submitComment() {
-  const name    = document.getElementById("c-name").value.trim();
-  const email   = document.getElementById("c-email").value.trim();
-  const content = document.getElementById("c-content").value.trim();
-
-  if (!name || !content) { alert("Please enter your name and a comment."); return; }
-
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/comments`, {
-    method: "POST",
-    headers: { ...HEADERS, "Prefer": "return=minimal" },
-    body: JSON.stringify({
-      person_id: currentPersonId,
-      commenter_name: name,
-      commenter_email: email,
-      content: content,
-      status: "approved"
-    })
-  });
-
-  if (res.ok) {
-    alert("✅ Comment posted!");
-    document.getElementById("c-name").value = "";
-    document.getElementById("c-email").value = "";
-    document.getElementById("c-content").value = "";
-    closeModalDirect();
-  } else {
-    alert("Something went wrong. Please try again.");
-  }
-}
-
-// ── Submit suggestion ────────────────────────────────────────
-async function submitSuggestion() {
-  const name  = document.getElementById("s-name").value.trim();
-  const email = document.getElementById("s-email").value.trim();
-  const field = document.getElementById("s-field").value;
-  const old_v = document.getElementById("s-old").value;
-  const new_v = document.getElementById("s-new").value.trim();
-
-  if (!name || !new_v) { alert("Please fill in your name and the correct value."); return; }
-
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/change_requests`, {
-    method: "POST",
-    headers: { ...HEADERS, "Prefer": "return=minimal" },
-    body: JSON.stringify({
-      person_id: currentPersonId,
-      requested_by_name: name,
-      requested_by_email: email,
-      field_name: field,
-      old_value: old_v,
-      new_value: new_v,
-      status: "pending"
-    })
-  });
-
-  if (res.ok) {
-    alert("✅ Suggestion submitted! Admin will review it.");
-    document.getElementById("s-new").value = "";
-    closeModalDirect();
-  } else {
-    alert("Something went wrong. Please try again.");
-  }
-}
-
-// ── Init ─────────────────────────────────────────────────────
-async function init() {
-  try {
+async function init(){
+  try{
     await fetchAll();
-    buildLayout();
-
-    // Center view
-    panX = 0; panY = 40; scale = 0.85;
-
-    renderTree();
-    document.getElementById("loading").style.display = "none";
-
-    // Hide mobile hint after 3s
-    setTimeout(() => {
-      const hint = document.getElementById("mobile-hint");
-      if (hint) hint.style.opacity = "0";
-    }, 3000);
-
-  } catch (err) {
-    document.getElementById("loading").innerHTML =
-      `<p style="color:red">❌ Failed to load: ${err.message}</p>
-       <p style="color:#888;font-size:0.8rem;margin-top:8px">Check Supabase URL and schema.</p>`;
+    const root=findRoot();
+    if(!root)throw new Error('No root found');
+    focusId=root.id; history=[]; animDir='fade';
+    renderFocus(); renderBC();
+    document.getElementById('loading').style.display='none';
+  }catch(e){
+    document.getElementById('loading').innerHTML=`<p style="color:var(--saffron)"">❌ ${e.message}</p>`;
   }
 }
-
-window.addEventListener("resize", () => { if (rendered) renderTree(); });
 init();
 </script>
 </body>
