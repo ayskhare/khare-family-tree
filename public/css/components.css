@@ -1,5 +1,6 @@
 /* ══════════════════════════════════════════════════════
-   components.css — Search, Person Cards, Dates, Matcher
+   components.css — Search, Person Cards, Dates, Matcher,
+                    Profile Sheet Focus View
    ══════════════════════════════════════════════════════ */
 
 /* ── Search Panel ───────────────────────────────────── */
@@ -146,7 +147,6 @@
   align-self: center;
 }
 
-/* Search empty/loading states */
 .search-hint {
   padding: 40px 20px;
   text-align: center;
@@ -154,6 +154,119 @@
 }
 .search-hint .hint-icon { font-size: 2.5rem; opacity: 0.4; margin-bottom: 10px; }
 .search-hint p { font-size: 0.82rem; line-height: 1.5; }
+
+/* ── Profile Sheet — Focus View (👪 Focus tab) ──────── */
+.focus-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 0 24px;
+  gap: 0;
+}
+
+.fv-row {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.fv-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+
+.fv-nodes {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+/* Children row can wrap */
+.fv-nodes-wrap {
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+/* Vertical connector between rows */
+.fv-connector {
+  display: flex;
+  justify-content: center;
+  padding: 4px 0;
+}
+.fv-vline {
+  width: 2px;
+  height: 20px;
+  background: linear-gradient(to bottom, var(--border), var(--saffron-lt));
+  border-radius: 1px;
+}
+
+/* Individual node card */
+.fv-node {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 9px 12px 8px;
+  cursor: pointer;
+  min-width: 80px;
+  max-width: 130px;
+  text-align: center;
+  transition: border-color 0.15s, transform 0.12s, box-shadow 0.15s;
+  box-shadow: var(--shadow);
+}
+.fv-node:hover  { border-color: var(--saffron-lt); box-shadow: var(--shadow-md); transform: translateY(-1px); }
+.fv-node:active { transform: scale(0.96); }
+
+/* The selected person — highlighted */
+.fv-self {
+  background: var(--saffron);
+  border-color: var(--saffron-dk);
+  box-shadow: var(--shadow-saffron);
+  min-width: 110px;
+}
+.fv-self .fv-node-name { color: white; font-size: 0.92rem; }
+.fv-self .fv-node-loc  { color: rgba(255,255,255,0.7); }
+
+/* Spouse of selected */
+.fv-role-self-sp {
+  background: var(--cream-dk);
+  border-color: var(--border);
+}
+
+/* Grandparent nodes — slightly muted */
+.fv-role-gp, .fv-role-gp-sp {
+  background: var(--cream);
+  opacity: 0.85;
+}
+.fv-role-gp-sp { opacity: 0.7; }
+
+/* Child nodes — compact */
+.fv-role-child {
+  min-width: 68px;
+  max-width: 100px;
+  padding: 7px 9px 6px;
+}
+.fv-role-child .fv-node-name { font-size: 0.75rem; }
+
+.fv-node-name {
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  color: var(--brown);
+  line-height: 1.25;
+  word-break: break-word;
+}
+.fv-node-loc {
+  font-size: 0.62rem;
+  color: var(--muted);
+  margin-top: 3px;
+}
 
 /* ── Dates Panel ────────────────────────────────────── */
 #panel-dates {
@@ -204,7 +317,6 @@
   padding: 12px 14px 24px;
 }
 
-/* Month group */
 .month-group { margin-bottom: 20px; }
 .month-label {
   font-size: 0.68rem;
@@ -250,9 +362,9 @@
   flex-shrink: 0;
   font-weight: 700;
 }
-.date-day.birthday { background: linear-gradient(135deg, #FFF0E4, #FFD5B0); }
+.date-day.birthday    { background: linear-gradient(135deg, #FFF0E4, #FFD5B0); }
 .date-day.anniversary { background: linear-gradient(135deg, #F0FFF4, #C6F6D5); }
-.date-day .day-num { font-size: 0.95rem; color: var(--brown); line-height: 1; }
+.date-day .day-num  { font-size: 0.95rem; color: var(--brown); line-height: 1; }
 .date-day .day-abbr { font-size: 0.5rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
 
 .date-info { flex: 1; min-width: 0; }
@@ -345,10 +457,7 @@
   font-size: 1rem;
   color: var(--brown);
 }
-.matcher-selector .ms-placeholder {
-  font-size: 0.88rem;
-  color: var(--muted);
-}
+.matcher-selector .ms-placeholder { font-size: 0.88rem; color: var(--muted); }
 .matcher-selector .ms-icon { font-size: 1.4rem; flex-shrink: 0; }
 
 .matcher-vs {
@@ -385,7 +494,6 @@
 .btn-match:active { transform: scale(0.98); }
 .btn-match:disabled { opacity: 0.45; cursor: default; transform: none; }
 
-/* Relationship result */
 .relation-result {
   background: var(--surface);
   border: 1.5px solid var(--border-soft);
@@ -401,11 +509,7 @@
   color: var(--saffron-dk);
   margin-bottom: 12px;
 }
-.rr-path {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
+.rr-path { display: flex; flex-direction: column; gap: 6px; }
 .rr-step {
   display: flex;
   align-items: center;
@@ -422,8 +526,7 @@
 .rr-step .step-line {
   width: 2px; height: 16px;
   background: var(--border);
-  margin-left: 3px; margin-top: -2px; margin-bottom: -2px;
-  align-self: stretch;
+  margin-left: 3px;
   flex-shrink: 0;
 }
 .rr-relation-label {
@@ -441,7 +544,7 @@
   margin-top: 3px;
 }
 
-/* Picker overlay (reused for both selectors in matcher) */
+/* ── Person Picker overlay (Matcher) ────────────────── */
 #person-picker {
   position: fixed; inset: 0;
   z-index: 300;
@@ -453,10 +556,7 @@
   pointer-events: none;
   transition: opacity 0.22s;
 }
-#person-picker.open {
-  opacity: 1;
-  pointer-events: all;
-}
+#person-picker.open { opacity: 1; pointer-events: all; }
 #picker-sheet {
   margin-top: auto;
   background: var(--surface);
@@ -516,5 +616,15 @@
   border: 1px solid transparent;
 }
 .picker-item:hover { background: var(--cream-dk); border-color: var(--border-soft); }
-.picker-item .pi-name { font-size: 0.88rem; color: var(--brown); font-weight: 500; }
-.picker-item .pi-meta { font-size: 0.7rem; color: var(--muted); margin-top: 1px; }
+.picker-item .pi-name  { font-size: 0.88rem; color: var(--brown); font-weight: 500; }
+.picker-item .pi-meta  { font-size: 0.7rem; color: var(--muted); margin-top: 1px; }
+
+/* ── Empty state (shared) ───────────────────────────── */
+.empty-state {
+  padding: 50px 20px;
+  text-align: center;
+  color: var(--muted);
+}
+.empty-state .es-icon  { font-size: 2.5rem; margin-bottom: 10px; opacity: 0.5; }
+.empty-state .es-title { font-family: var(--font-display); font-size: 1rem; color: var(--brown-lt); }
+.empty-state .es-sub   { font-size: 0.78rem; margin-top: 5px; }
