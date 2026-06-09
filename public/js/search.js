@@ -1,7 +1,7 @@
 // search.js — 🔍 search + person cards
 import { state } from "./app.js";
 import { cleanName, shortName } from "./utils.js";
-import { jumpTo } from "./tree.js";
+import { openSheet } from "./tree.js";
 
 let _filter = "all";
 let _query  = "";
@@ -123,7 +123,7 @@ function _makePersonCard(p) {
   `;
 
   el.addEventListener("click", () => {
-    jumpTo(p.id);
+    openSheet(p.id);
   });
   return el;
 }
