@@ -283,19 +283,22 @@ function _initPanZoom(container, svg, svgW, svgH) {
   let dragging = false, lastX = 0, lastY = 0;
   let lastDist = 0;
 
-  // Fit the tree into the container on first load
-  const vw = container.clientWidth  || window.innerWidth;
-  const vh = container.clientHeight || (window.innerHeight - 120);
-  const fitScale = Math.min(vw / svgW, vh / svgH, 1);
-  scale = fitScale;
-  tx = (vw - svgW * scale) / 2;
-  ty = 16;
-  _applyTransform();
-
   function _applyTransform() {
     svg.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
     svg.style.transformOrigin = "0 0";
   }
+
+  // Fit the tree into the container — deferred to after first paint
+  // so clientWidth is never 0 (panel is opacity:0 at init time)
+  function _fitToContainer() {
+    const vw = container.clientWidth  || window.innerWidth  || 390;
+    const vh = container.clientHeight || window.innerHeight - 120 || 600;
+    scale = Math.min(vw / svgW, vh / svgH, 1);
+    tx = (vw - svgW * scale) / 2;
+    ty = 16;
+    _applyTransform();
+  }
+  requestAnimationFrame(() => requestAnimationFrame(_fitToContainer));
 
   // Mouse
   container.addEventListener("mousedown", e => {
