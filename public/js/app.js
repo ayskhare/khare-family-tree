@@ -1,7 +1,7 @@
 // app.js — init, router, shared state
 import { fetchAll } from "./api.js";
 import { showToast } from "./utils.js";
-import { initTree, renderFocus } from "./tree.js";
+import { initTree } from "./tree.js";
 import { initSearch } from "./search.js";
 import { initDates } from "./dates.js";
 import { initMatch } from "./match.js";
@@ -30,26 +30,7 @@ export function getChildren(id) {
     .map(r => state.pMap[r.person2_id])
     .filter(Boolean);
 }
-export function getSiblings(id) {
-  const p = getParent(id);
-  if (!p) return [];
-  return getChildren(p.id).filter(c => c.id !== id);
-}
-export function findRoot() {
-  const hasParent = new Set(state.rels.filter(r => r.type === "parent_child").map(r => r.person2_id));
-  return state.persons.filter(p => !hasParent.has(p.id)).sort((a, b) => (a.generation ?? 99) - (b.generation ?? 99))[0];
-}
-export function buildPath(targetId) {
-  const chain = [];
-  let cur = targetId;
-  for (let i = 0; i < 30; i++) {
-    const p = getParent(cur);
-    if (!p) break;
-    chain.unshift(p.id);
-    cur = p.id;
-  }
-  return chain;
-}
+
 
 // ── Router / Tab switching ─────────────────────────────
 const TABS = ["tree", "search", "dates", "match"];
