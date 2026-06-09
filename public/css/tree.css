@@ -3,210 +3,121 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  position: relative;
 }
 
-/* Breadcrumb */
-#tree-breadcrumb {
-  background: var(--cream-dk);
-  border-bottom: 1px solid var(--border-soft);
-  padding: 6px 14px;
-  display: flex;
-  align-items: center;
-  overflow-x: auto;
-  scrollbar-width: none;
-  flex-shrink: 0;
-  min-height: 32px;
-  gap: 2px;
-}
-#tree-breadcrumb::-webkit-scrollbar { display: none; }
-.bc-item {
-  font-size: 0.68rem;
-  color: var(--muted);
-  white-space: nowrap;
-  cursor: pointer;
-  padding: 3px 6px;
-  border-radius: var(--radius-xs);
-  transition: color 0.15s, background 0.15s;
-  font-weight: 500;
-}
-.bc-item:hover { background: var(--border-soft); color: var(--brown-lt); }
-.bc-item.active { color: var(--saffron); font-weight: 600; cursor: default; }
-.bc-sep { font-size: 0.6rem; color: var(--border); margin: 0 1px; }
-
-/* Canvas */
+/* Canvas: fills the panel, clips overflow, SVG sits inside */
 #tree-canvas {
   flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 16px 12px 32px;
-  gap: 0;
-  scroll-behavior: smooth;
-}
-
-/* Connectors */
-.conn-v {
-  width: 2px;
-  background: linear-gradient(to bottom, var(--border), var(--saffron-lt));
-  flex-shrink: 0;
-  align-self: center;
-  border-radius: 1px;
-}
-.conn-v-short { height: 20px; }
-.conn-v-med   { height: 28px; }
-
-/* Cards */
-.card-pair {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.spouse-line {
-  width: 18px;
-  height: 2px;
-  background: repeating-linear-gradient(
-    to right, var(--border) 0, var(--border) 4px,
-    transparent 4px, transparent 8px
-  );
-  flex-shrink: 0;
-}
-
-.tree-card {
-  background: var(--surface);
-  border-radius: var(--radius);
-  padding: 11px 14px 10px;
-  box-shadow: var(--shadow);
-  cursor: pointer;
+  overflow: hidden;
   position: relative;
-  min-width: 110px;
-  max-width: 155px;
-  border: 2px solid transparent;
-  transition: transform 0.14s var(--ease-out), box-shadow 0.14s, border-color 0.14s;
-  user-select: none;
+  touch-action: none; /* hand pan/zoom to JS */
+  background: var(--cream);
+  cursor: grab;
 }
-.tree-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
-.tree-card:active { transform: scale(0.96); }
+#tree-canvas:active { cursor: grabbing; }
 
-.tree-card.focus-card {
-  background: var(--saffron);
-  border-color: var(--saffron-dk);
-  box-shadow: var(--shadow-saffron);
-}
-.tree-card.focus-card .card-name { color: white; }
-.tree-card.focus-card .card-meta { color: rgba(255,255,255,0.72); }
-.tree-card.focus-card .card-gen  { color: rgba(255,255,255,0.55); }
-
-.tree-card.spouse-card {
-  background: var(--cream-dk);
-  border-color: var(--border);
-}
-.tree-card.spouse-card .card-name { color: var(--brown-lt); }
-
-.tree-card.parent-card {
-  border-color: var(--border);
-  opacity: 0.9;
-}
-.tree-card.child-card {
-  min-width: 90px;
-  max-width: 118px;
-  padding: 9px 11px 8px;
-}
-.tree-card.needs-review {
-  border-color: #F59E0B !important;
-  border-style: dashed !important;
-}
-
-.card-gen {
+/* The SVG element itself */
+#tree-canvas svg {
   position: absolute;
-  top: 5px; right: 8px;
-  font-size: 0.53rem;
-  color: var(--muted);
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  top: 0; left: 0;
+  will-change: transform;
+  /* transform applied by JS */
 }
-.card-name {
+
+/* ── SVG connector lines ────────────────────────────── */
+.conn-line {
+  stroke: var(--border);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+.conn-spouse {
+  stroke: var(--border);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+  stroke-linecap: round;
+}
+
+/* ── SVG node rects ─────────────────────────────────── */
+.node-rect {
+  transition: filter 0.15s;
+}
+.blood-rect {
+  fill: var(--surface);
+  stroke: var(--saffron-lt);
+  stroke-width: 1.5;
+}
+.married-rect {
+  fill: var(--cream-dk);
+  stroke: var(--border);
+  stroke-width: 1;
+}
+.spouse-rect {
+  fill: var(--cream-dk);
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+/* hover / active state on node group */
+.tree-node { cursor: pointer; }
+.tree-node:hover  .node-rect { filter: brightness(0.96) drop-shadow(0 2px 6px rgba(0,0,0,0.10)); }
+.tree-node:active .node-rect { filter: brightness(0.90); }
+
+/* Review flag: dashed amber border */
+.node-review .node-rect {
+  stroke: #F59E0B;
+  stroke-dasharray: 4 3;
+  stroke-width: 1.5;
+}
+
+/* ── SVG text inside nodes ──────────────────────────── */
+.node-name {
   font-family: var(--font-display);
-  font-size: 0.85rem;
-  color: var(--ink);
-  line-height: 1.25;
-  padding-right: 20px;
+  font-size: 11px;
+  fill: var(--ink);
+  pointer-events: none;
+  dominant-baseline: auto;
 }
-.tree-card.child-card .card-name { font-size: 0.77rem; }
-.card-meta {
-  font-size: 0.62rem;
-  color: var(--muted);
-  margin-top: 4px;
-  line-height: 1.3;
+.node-spouse .node-name {
+  fill: var(--brown-lt);
+  font-size: 10px;
 }
-.tree-card.child-card .card-meta { display: none; }
 
-/* Siblings strip */
-#siblings-strip {
-  width: 100%;
-  padding: 4px 4px 0;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  overflow-x: auto;
-  scrollbar-width: none;
+/* Generation badge */
+.gen-badge-rect {
+  fill: var(--saffron);
+  opacity: 0.18;
 }
-#siblings-strip::-webkit-scrollbar { display: none; }
-.sib-label {
-  font-size: 0.58rem;
+.gen-badge-txt {
+  font-size: 7.5px;
+  font-weight: 700;
+  fill: var(--saffron-dk);
+  pointer-events: none;
+  font-family: var(--font-body);
+  letter-spacing: 0.03em;
+}
+
+/* Deceased cross mark */
+.deceased-mark {
+  font-size: 8px;
+  fill: var(--muted);
+  pointer-events: none;
+}
+
+/* ── Zoom hint overlay ──────────────────────────────── */
+#tree-canvas::after {
+  content: "Pinch to zoom · Drag to pan · Tap any name to see details";
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.6rem;
   color: var(--muted);
-  white-space: nowrap;
-  flex-shrink: 0;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-.sib-chip {
-  background: var(--cream-dk);
-  border: 1.5px solid var(--border);
-  border-radius: 20px;
+  background: rgba(253,248,240,0.85);
   padding: 4px 10px;
-  font-size: 0.62rem;
-  color: var(--brown-lt);
+  border-radius: 20px;
+  border: 1px solid var(--border-soft);
   white-space: nowrap;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: all 0.15s;
-  font-weight: 500;
-}
-.sib-chip:hover  { background: var(--cream); border-color: var(--saffron-lt); }
-.sib-chip:active { background: var(--saffron); color: white; border-color: var(--saffron); }
-
-/* Children row */
-#children-row {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: center;
-  width: 100%;
-  padding: 0 8px;
-  margin-top: 2px;
-}
-
-/* Animations */
-@keyframes slideUp   { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
-@keyframes slideDown { from { opacity:0; transform:translateY(-20px); } to { opacity:1; transform:translateY(0); } }
-@keyframes fadeScale { from { opacity:0; transform:scale(0.94); } to { opacity:1; transform:scale(1); } }
-.anim-up   { animation: slideUp   0.3s var(--ease-out) both; }
-.anim-down { animation: slideDown 0.3s var(--ease-out) both; }
-.anim-fade { animation: fadeScale 0.22s ease both; }
-
-#children-row .tree-card:nth-child(1) { animation-delay: 0.04s }
-#children-row .tree-card:nth-child(2) { animation-delay: 0.08s }
-#children-row .tree-card:nth-child(3) { animation-delay: 0.12s }
-#children-row .tree-card:nth-child(4) { animation-delay: 0.16s }
-#children-row .tree-card:nth-child(5) { animation-delay: 0.20s }
-#children-row .tree-card:nth-child(6) { animation-delay: 0.24s }
-#children-row .tree-card:nth-child(7) { animation-delay: 0.28s }
-#children-row .tree-card:nth-child(8) { animation-delay: 0.32s }
-
-@media (min-width: 600px) {
-  .tree-card { min-width: 128px; max-width: 175px; }
-  .tree-card.child-card { min-width: 105px; max-width: 140px; }
+  pointer-events: none;
+  backdrop-filter: blur(4px);
 }
