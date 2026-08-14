@@ -1,404 +1,97 @@
-// tree.js — 🌳 Full tree SVG render + pan/zoom + profile sheet
+// tree.js — 🌳 Focused org-chart tree navigator + profile sheet
 import { state, getSpouse, getParent, getChildren } from "./app.js";
 import { cleanName, shortName, fmtDate, showToast } from "./utils.js";
 import { postComment, postChangeRequest } from "./api.js";
 
 // ─────────────────────────────────────────────────────
-// Layout constants
+// State
 // ─────────────────────────────────────────────────────
-const NW        = 100;  // node width
-const NH        = 52;   // node height
-const SPOUSE_W  = 88;   // spouse node width (slightly narrower)
-const SGAP      = 10;   // gap between primary and spouse
-const HGAP      = 22;   // horizontal gap between sibling subtrees
-const VGAP      = 80;   // vertical gap between generations
-const ROUNDING  = 8;    // card corner radius
-
-// ─────────────────────────────────────────────────────
-// Profile sheet state
-// ─────────────────────────────────────────────────────
-let _sheetPid = null;
-
-// ─────────────────────────────────────────────────────
-// Build derived maps once data is ready
-// ─────────────────────────────────────────────────────
-let _primaryIds   = new Set(); // nodes that are "main" (have parent/child rels)
-let _satelliteMap = {};        // primaryId → satelliteSpouseId
-let _primaryOf    = {};        // satelliteId → primaryId
-
-function _buildMaps() {
-  const inParentChild = new Set();
-  state.rels.forEach(r => {
-    if (r.type === "parent_child") {
-      inParentChild.add(r.person1_id);
-      inParentChild.add(r.person2_id);
-    }
-  });
-
-  // Every person is primary unless they are a spouse-only satellite
-  state.persons.forEach(p => _primaryIds.add(p.id));
-
-  state.rels.forEach(r => {
-    if (r.type !== "spouse") return;
-    const p1in = inParentChild.has(r.person1_id);
-    const p2in = inParentChild.has(r.person2_id);
-    let primary, satellite;
-    if (p1in && !p2in)       { primary = r.person1_id; satellite = r.person2_id; }
-    else if (p2in && !p1in)  { primary = r.person2_id; satellite = r.person1_id; }
-    else if (!p1in && !p2in) { primary = r.person1_id; satellite = r.person2_id; } // rare
-    else return; // both in tree = both primary (shouldn't happen)
-
-    _satelliteMap[primary]   = satellite;
-    _primaryOf[satellite]    = primary;
-    _primaryIds.delete(satellite);
-  });
-}
-
-// ─────────────────────────────────────────────────────
-// Subtree width calculation (primary nodes only)
-// ─────────────────────────────────────────────────────
-const _widthCache = {};
-
-function _unitWidth(id) {
-  // Width of a single primary node + its spouse (if any)
-  const hasSp = !!_satelliteMap[id];
-  return hasSp ? NW + SGAP + SPOUSE_W : NW;
-}
-
-function _subtreeWidth(id) {
-  if (_widthCache[id] !== undefined) return _widthCache[id];
-  const children = _primaryChildren(id);
-  const uw = _unitWidth(id);
-  if (!children.length) {
-    _widthCache[id] = uw + HGAP;
-    return _widthCache[id];
-  }
-  const childSum = children.reduce((s, c) => s + _subtreeWidth(c.id), 0);
-  _widthCache[id] = Math.max(uw + HGAP, childSum);
-  return _widthCache[id];
-}
-
-// Only primary children (exclude satellite spouses)
-function _primaryChildren(id) {
-  return getChildren(id).filter(c => _primaryIds.has(c.id));
-}
-
-// ─────────────────────────────────────────────────────
-// Assign x,y positions to every primary node
-// ─────────────────────────────────────────────────────
-const _pos = {}; // id → {x, y, cx}  cx = center x of node
-
-function _assignPositions(id, left) {
-  const children = _primaryChildren(id);
-  const gen = state.pMap[id]?.generation ?? 0;
-  const y   = gen * (NH + VGAP);
-  const tw  = _subtreeWidth(id);
-
-  // Center this node over its children's span
-  let cx;
-  if (!children.length) {
-    cx = left + _unitWidth(id) / 2;
-  } else {
-    // lay children out first
-    let cl = left;
-    for (const c of children) {
-      _assignPositions(c.id, cl);
-      cl += _subtreeWidth(c.id);
-    }
-    // center over first..last child
-    const firstCX = _pos[children[0].id].cx;
-    const lastCX  = _pos[children[children.length - 1].id].cx;
-    cx = (firstCX + lastCX) / 2;
-  }
-
-  _pos[id] = { x: cx - NW / 2, y, cx };
-
-  // Spouse sits to the right
-  const spId = _satelliteMap[id];
-  if (spId) {
-    _pos[spId] = { x: cx + NW / 2 + SGAP, y, cx: cx + NW / 2 + SGAP + SPOUSE_W / 2 };
-  }
-}
-
-// ─────────────────────────────────────────────────────
-// SVG rendering
-// ─────────────────────────────────────────────────────
-function _renderTree() {
-  const canvas = document.getElementById("tree-canvas");
-  canvas.innerHTML = "";
-
-  // Compute total canvas size
-  const allX = Object.values(_pos).map(p => p.x);
-  const allY = Object.values(_pos).map(p => p.y);
-  const minX = Math.min(...allX) - 20;
-  const maxX = Math.max(...allX) + NW + 20;
-  const minY = Math.min(...allY) - 20;
-  const maxY = Math.max(...allY) + NH + 20;
-  const W = maxX - minX;
-  const H = maxY - minY;
-
-  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svg.setAttribute("width",  W);
-  svg.setAttribute("height", H);
-  svg.setAttribute("viewBox", `${minX} ${minY} ${W} ${H}`);
-  svg.style.display = "block";
-  svg.style.overflow = "visible";
-
-  // ── Connector lines (drawn behind nodes) ──
-  const lineGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
-  lineGroup.setAttribute("class", "tree-lines");
-  svg.appendChild(lineGroup);
-
-  // Spouse connector lines
-  for (const [pid, sid] of Object.entries(_satelliteMap)) {
-    const pp = _pos[pid], sp = _pos[sid];
-    if (!pp || !sp) continue;
-    const x1 = pp.x + NW;
-    const x2 = sp.x;
-    const y  = pp.y + NH / 2;
-    const line = _svgEl("line", { x1, y1: y, x2, y2: y, class: "conn-spouse" });
-    lineGroup.appendChild(line);
-  }
-
-  // Parent → child connectors
-  for (const pid of _primaryIds) {
-    const children = _primaryChildren(state.pMap[pid] || { id: pid });
-    if (!children.length) continue;
-    const pp = _pos[pid]; if (!pp) continue;
-
-    // Drop from parent bottom-center
-    const parentCX  = pp.cx;
-    const parentBot = pp.y + NH;
-    const midY      = parentBot + VGAP * 0.45;
-
-    if (children.length === 1) {
-      const cp = _pos[children[0].id]; if (!cp) continue;
-      const d = `M ${parentCX} ${parentBot} L ${parentCX} ${midY} L ${cp.cx} ${midY} L ${cp.cx} ${cp.y}`;
-      lineGroup.appendChild(_svgEl("path", { d, class: "conn-line", fill: "none" }));
-    } else {
-      // Horizontal bus + drops
-      const firstCX = _pos[children[0].id]?.cx;
-      const lastCX  = _pos[children[children.length - 1].id]?.cx;
-      if (firstCX == null || lastCX == null) continue;
-
-      // Vertical from parent down to bus
-      lineGroup.appendChild(_svgEl("line", { x1: parentCX, y1: parentBot, x2: parentCX, y2: midY, class: "conn-line" }));
-      // Horizontal bus
-      lineGroup.appendChild(_svgEl("line", { x1: firstCX, y1: midY, x2: lastCX, y2: midY, class: "conn-line" }));
-      // Verticals down to each child
-      for (const c of children) {
-        const cp = _pos[c.id]; if (!cp) continue;
-        lineGroup.appendChild(_svgEl("line", { x1: cp.cx, y1: midY, x2: cp.cx, y2: cp.y, class: "conn-line" }));
-      }
-    }
-  }
-
-  // ── Node cards ──
-  const nodeGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
-  nodeGroup.setAttribute("class", "tree-nodes");
-  svg.appendChild(nodeGroup);
-
-  for (const [id, pos] of Object.entries(_pos)) {
-    const p = state.pMap[id]; if (!p) continue;
-    const isSatellite = !!_primaryOf[id];
-    const w = isSatellite ? SPOUSE_W : NW;
-    nodeGroup.appendChild(_makeNodeCard(p, pos.x, pos.y, w, isSatellite));
-  }
-
-  canvas.appendChild(svg);
-  _initPanZoom(canvas, svg, W, H);
-}
-
-function _svgEl(tag, attrs) {
-  const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
-  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
-  return el;
-}
-
-function _makeNodeCard(p, x, y, w, isSatellite) {
-  const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-  g.setAttribute("class", "tree-node" + (isSatellite ? " node-spouse" : "") + (p.needs_review ? " node-review" : ""));
-  g.setAttribute("data-pid", p.id);
-  g.style.cursor = "pointer";
-
-  // Card background
-  const rect = _svgEl("rect", {
-    x, y, width: w, height: NH, rx: ROUNDING, ry: ROUNDING,
-    class: isSatellite ? "node-rect spouse-rect"
-         : p.blood_member ? "node-rect blood-rect"
-         : "node-rect married-rect"
-  });
-  g.appendChild(rect);
-
-  // Generation badge (primary only)
-  if (!isSatellite) {
-    const badge = _svgEl("rect", { x: x + w - 22, y: y + 2, width: 20, height: 14, rx: 4, ry: 4, class: "gen-badge-rect" });
-    g.appendChild(badge);
-    const genTxt = _svgEl("text", { x: x + w - 12, y: y + 12, class: "gen-badge-txt", "text-anchor": "middle" });
-    genTxt.textContent = `G${p.generation ?? "?"}`;
-    g.appendChild(genTxt);
-  }
-
-  // Name text — wraps at 2 lines
-  const name = shortName(p.name);
-  const words = name.split(" ");
-  const line1 = words.length > 2 ? words.slice(0, Math.ceil(words.length / 2)).join(" ") : name;
-  const line2 = words.length > 2 ? words.slice(Math.ceil(words.length / 2)).join(" ") : null;
-
-  const cx = x + w / 2;
-  if (line2) {
-    const t1 = _svgEl("text", { x: cx, y: y + NH / 2 - 5, class: "node-name", "text-anchor": "middle" });
-    t1.textContent = line1;
-    g.appendChild(t1);
-    const t2 = _svgEl("text", { x: cx, y: y + NH / 2 + 11, class: "node-name", "text-anchor": "middle" });
-    t2.textContent = line2;
-    g.appendChild(t2);
-  } else {
-    const t = _svgEl("text", { x: cx, y: y + NH / 2 + 5, class: "node-name", "text-anchor": "middle" });
-    t.textContent = line1;
-    g.appendChild(t);
-  }
-
-  // Deceased indicator
-  if (p.is_alive === false) {
-    const cross = _svgEl("text", { x: x + 8, y: y + 13, class: "deceased-mark" });
-    cross.textContent = "✝";
-    g.appendChild(cross);
-  }
-
-  // Tap → open profile sheet
-  g.addEventListener("click", (e) => {
-    e.stopPropagation();
-    openSheet(p.id);
-  });
-
-  return g;
-}
-
-// ─────────────────────────────────────────────────────
-// Pan + Zoom (touch + mouse)
-// ─────────────────────────────────────────────────────
-function _initPanZoom(container, svg, svgW, svgH) {
-  let scale = 1, tx = 0, ty = 0;
-  let dragging = false, lastX = 0, lastY = 0;
-  let lastDist = 0;
-
-  function _applyTransform() {
-    svg.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
-    svg.style.transformOrigin = "0 0";
-  }
-
-  // Fit the tree into the container — deferred to after first paint
-  // so clientWidth is never 0 (panel is opacity:0 at init time)
-  function _fitToContainer() {
-    const vw = container.clientWidth  || window.innerWidth  || 390;
-    const vh = container.clientHeight || window.innerHeight - 120 || 600;
-    scale = Math.min(vw / svgW, vh / svgH, 1);
-    tx = (vw - svgW * scale) / 2;
-    ty = 16;
-    _applyTransform();
-  }
-  requestAnimationFrame(() => requestAnimationFrame(_fitToContainer));
-
-  // Mouse
-  container.addEventListener("mousedown", e => {
-    dragging = true; lastX = e.clientX; lastY = e.clientY;
-  });
-  window.addEventListener("mousemove", e => {
-    if (!dragging) return;
-    tx += e.clientX - lastX; ty += e.clientY - lastY;
-    lastX = e.clientX; lastY = e.clientY;
-    _applyTransform();
-  });
-  window.addEventListener("mouseup", () => dragging = false);
-  container.addEventListener("wheel", e => {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    const rect  = container.getBoundingClientRect();
-    const ox    = e.clientX - rect.left;
-    const oy    = e.clientY - rect.top;
-    tx = ox - (ox - tx) * delta;
-    ty = oy - (oy - ty) * delta;
-    scale = Math.min(Math.max(scale * delta, 0.15), 2.5);
-    _applyTransform();
-  }, { passive: false });
-
-  // Touch
-  container.addEventListener("touchstart", e => {
-    if (e.touches.length === 1) {
-      dragging = true;
-      lastX = e.touches[0].clientX;
-      lastY = e.touches[0].clientY;
-    } else if (e.touches.length === 2) {
-      dragging = false;
-      lastDist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY
-      );
-    }
-  }, { passive: true });
-
-  container.addEventListener("touchmove", e => {
-    e.preventDefault();
-    if (e.touches.length === 1 && dragging) {
-      tx += e.touches[0].clientX - lastX;
-      ty += e.touches[0].clientY - lastY;
-      lastX = e.touches[0].clientX;
-      lastY = e.touches[0].clientY;
-      _applyTransform();
-    } else if (e.touches.length === 2) {
-      const dist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY
-      );
-      if (lastDist) {
-        const delta = dist / lastDist;
-        const midX  = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-        const midY  = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-        const rect  = container.getBoundingClientRect();
-        const ox    = midX - rect.left;
-        const oy    = midY - rect.top;
-        tx = ox - (ox - tx) * delta;
-        ty = oy - (oy - ty) * delta;
-        scale = Math.min(Math.max(scale * delta, 0.15), 2.5);
-        _applyTransform();
-      }
-      lastDist = dist;
-    }
-  }, { passive: false });
-
-  container.addEventListener("touchend", e => {
-    if (e.touches.length < 2) lastDist = 0;
-    if (e.touches.length === 0) dragging = false;
-  });
-}
+let _sheetPid = null; // person shown in the profile sheet
+let _focusId  = null; // person currently centered in the Tree tab
+let _homeId   = null; // default anchor person (Ayush Khare)
 
 // ─────────────────────────────────────────────────────
 // Public: init — called by app.js once data is ready
 // ─────────────────────────────────────────────────────
 export function initTree() {
-  _buildMaps();
-
-  // Find root(s)
-  const hasParent = new Set(state.rels.filter(r => r.type === "parent_child").map(r => r.person2_id));
-  const roots = [..._primaryIds].map(id => state.pMap[id]).filter(p => p && !hasParent.has(p.id));
-  roots.sort((a, b) => (a.generation ?? 0) - (b.generation ?? 0));
-
-  // Assign positions — allow multiple roots side by side
-  let left = 0;
-  for (const root of roots) {
-    _assignPositions(root.id, left);
-    left += _subtreeWidth(root.id);
-  }
-
-  _renderTree();
+  _homeId  = _findHomePerson();
+  _focusId = _homeId;
+  _renderFocusTree(_focusId);
   _wireSheet();
 }
 
-// jumpTo is called from search tab — just open the profile sheet directly
+// Find the default focus person: "Ayush Khare". Since more than one
+// person can share a name in the tree, prefer the one whose parent is
+// "Arun Khare" (matches known family history). Falls back gracefully.
+function _findHomePerson() {
+  const candidates = state.persons.filter(
+    p => cleanName(p.name).toLowerCase() === "ayush khare"
+  );
+  if (candidates.length === 1) return candidates[0].id;
+  if (candidates.length > 1) {
+    const preferred = candidates.find(p => {
+      const parent = getParent(p.id);
+      return parent && cleanName(parent.name).toLowerCase() === "arun khare";
+    });
+    return (preferred || candidates[0]).id;
+  }
+  // Fallback: youngest-generation blood member, else first person
+  const fallback = [...state.persons]
+    .filter(p => p.blood_member)
+    .sort((a, b) => (b.generation ?? 0) - (a.generation ?? 0))[0];
+  return (fallback || state.persons[0])?.id ?? null;
+}
+
+// jumpTo — used by the Search tab to focus the tree on a specific person
 export function jumpTo(id) {
   import("./app.js").then(m => m.switchTab("tree"));
-  setTimeout(() => openSheet(id), 150);
+  setTimeout(() => {
+    _focusId = id;
+    _renderFocusTree(id);
+  }, 150);
+}
+
+// ─────────────────────────────────────────────────────
+// Focus tree renderer (grandparents → parents → self+spouse → children)
+// ─────────────────────────────────────────────────────
+function _renderFocusTree(id) {
+  const canvas = document.getElementById("tree-canvas");
+  if (!canvas) return;
+  const person = state.pMap[id];
+
+  if (!person) {
+    canvas.innerHTML = `<div class="empty-state">
+      <div class="es-icon">🌳</div>
+      <div class="es-title">No family data found</div>
+    </div>`;
+    return;
+  }
+
+  canvas.innerHTML = `
+    <div class="tree-toolbar">
+      <button class="tree-home-btn" id="tree-home-btn" ${id === _homeId ? "disabled" : ""}>🏠 Home</button>
+      <div class="tree-toolbar-name">${cleanName(person.name)}</div>
+      <button class="tree-info-btn" id="tree-info-btn">ℹ️ Profile</button>
+    </div>
+    <div class="tree-focus-scroll">
+      ${_buildFocusView(id)}
+    </div>
+  `;
+
+  canvas.querySelector("#tree-home-btn")?.addEventListener("click", () => {
+    _focusId = _homeId;
+    _renderFocusTree(_homeId);
+  });
+  canvas.querySelector("#tree-info-btn")?.addEventListener("click", () => openSheet(id));
+
+  // Tapping any relative card in the tree navigates the focus (org-chart style)
+  canvas.querySelectorAll(".fv-node[data-pid]").forEach(node => {
+    node.addEventListener("click", () => {
+      const pid = node.dataset.pid;
+      _focusId = pid;
+      _renderFocusTree(pid);
+    });
+  });
 }
 
 // ─────────────────────────────────────────────────────
@@ -455,9 +148,10 @@ export function openSheet(id) {
   }
   document.getElementById("stab-info").innerHTML = infoHtml;
 
-  // Focus tab — 2 generations up + 1 generation down
+  // Relatives tab — reuse the same focus-view widget, but clicking here
+  // opens the full profile instead of re-navigating the Tree tab.
   document.getElementById("stab-relatives").innerHTML = _buildFocusView(id);
-  document.querySelectorAll(".fv-node[data-pid]").forEach(node => {
+  document.querySelectorAll("#stab-relatives .fv-node[data-pid]").forEach(node => {
     node.addEventListener("click", () => openSheet(node.dataset.pid));
   });
 
@@ -475,7 +169,6 @@ function _buildFocusView(id) {
   const parent  = getParent(id);
   const grandpa = parent ? getParent(parent.id) : null;
 
-  // Grandparent row (gen -2)
   let gpRow = "";
   if (grandpa) {
     const gpSpouse = getSpouse(grandpa.id);
@@ -490,7 +183,6 @@ function _buildFocusView(id) {
       <div class="fv-connector"><div class="fv-vline"></div></div>`;
   }
 
-  // Parent row (gen -1)
   let pRow = "";
   if (parent) {
     const pSpouse = getSpouse(parent.id);
@@ -505,7 +197,6 @@ function _buildFocusView(id) {
       <div class="fv-connector"><div class="fv-vline"></div></div>`;
   }
 
-  // Selected person + their spouse (centre)
   const spouse   = getSpouse(id);
   const selfRow  = `
     <div class="fv-row fv-row-self">
@@ -516,7 +207,6 @@ function _buildFocusView(id) {
       </div>
     </div>`;
 
-  // Children row (gen +1)
   const children = getChildren(id);
   let cRow = "";
   if (children.length) {
@@ -539,7 +229,6 @@ function _buildFocusView(id) {
 
 function _fvNode(p, role) {
   const isSelf    = role === "self";
-  const isSpouse  = role.endsWith("-sp") || role === "self-sp";
   const isChild   = role === "child";
   const name = shortName(p.name);
   return `<div class="fv-node fv-role-${role}${isSelf ? " fv-self" : ""}" data-pid="${p.id}" title="${cleanName(p.name)}">
