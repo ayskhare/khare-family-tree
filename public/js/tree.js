@@ -17,7 +17,7 @@ const MAX_SCALE      = 2.2;
 const FOCUS_ROWS     = 4.3; // rows visible at initial "focused" zoom (≈2 up + self + 1 down)
 
 const TAP_MOVE_THRESHOLD_MOUSE = 6;   // px — mouse/trackpad is precise
-const TAP_MOVE_THRESHOLD_TOUCH = 12;  // px — fingertips wobble more; be more forgiving
+const TAP_MOVE_THRESHOLD_TOUCH = 24;  // px — fingertips wobble more; be more forgiving
 const TAP_TIME_THRESHOLD = 600;       // ms — pointer held longer than this = not a tap
 
 // ─────────────────────────────────────────────────────
