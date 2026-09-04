@@ -228,15 +228,41 @@ body {
   flex-shrink: 0;
 }
 .sheet-header {
+  position: relative;
   padding: 14px 20px 12px;
   border-bottom: 1px solid var(--border-soft);
   flex-shrink: 0;
 }
+
+/* Close button — circular, top-right, sized for an easy tap/click */
+.sheet-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: var(--cream-dk);
+  color: var(--brown);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+  z-index: 5;
+}
+.sheet-close-btn:hover  { background: var(--border); border-color: var(--saffron-lt); }
+.sheet-close-btn:active { transform: scale(0.92); }
+
 .sheet-name {
   font-family: var(--font-display);
   font-size: 1.45rem;
   color: var(--brown);
   line-height: 1.2;
+  padding-right: 44px; /* keep long names clear of the close button */
 }
 .sheet-meta {
   font-size: 0.76rem;
