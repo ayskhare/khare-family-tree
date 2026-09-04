@@ -16,14 +16,15 @@ const BOTTOM_PAD    = 40;
 const MAX_SCALE      = 2.2;
 const FOCUS_ROWS     = 4.3; // rows visible at initial "focused" zoom (≈2 up + self + 1 down)
 
-const TAP_MOVE_THRESHOLD = 6;   // px — pointer movement above this = drag, not tap
-const TAP_TIME_THRESHOLD = 600; // ms — pointer held longer than this = not a tap
+const TAP_MOVE_THRESHOLD_MOUSE = 6;   // px — mouse/trackpad is precise
+const TAP_MOVE_THRESHOLD_TOUCH = 12;  // px — fingertips wobble more; be more forgiving
+const TAP_TIME_THRESHOLD = 600;       // ms — pointer held longer than this = not a tap
 
 // ─────────────────────────────────────────────────────
 // Module state
 // ─────────────────────────────────────────────────────
 let _sheetPid = null;   // person shown in the profile sheet
-let _homeId   = null;   // default anchor person (Ayush Khare)
+let _homeId   = null;   // default anchor person (Ayush Khare) — used only to set the initial view
 let _layout   = null;   // { nodeIndex: {id:{cx,top}}, totalWidth, totalHeight }
 
 let _viewportEl = null;
@@ -49,9 +50,11 @@ export function initTree() {
   window.addEventListener("resize", _onResize);
 }
 
-// Find the default focus person: "Ayush Khare". Since more than one
+// Find the default landing person: "Ayush Khare". Since more than one
 // person can share a name in the tree, prefer the one whose parent is
 // "Arun Khare" (matches known family history). Falls back gracefully.
+// Used only to decide where the tree centers on load / on Home tap —
+// the person themself isn't marked or treated specially in the tree.
 function _findHomePerson() {
   const candidates = state.persons.filter(
     p => cleanName(p.name).toLowerCase() === "ayush khare"
@@ -233,10 +236,8 @@ function _renderShell() {
       p.blood_member ? "tn-blood" : "tn-married",
       p.is_alive === false ? "tn-deceased" : "",
     ].filter(Boolean).join(" ");
-    const homeBadge = n.id === _homeId ? `<span class="tn-home-badge" title="You">🏠</span>` : "";
     return `<div class="${cls}" data-pid="${n.id}" title="${cleanName(p.name)}"
               style="left:${n.cx - NODE_W/2}px; top:${n.top}px; width:${NODE_W}px; height:${NODE_H}px;">
-              ${homeBadge}
               <span class="tn-name">${shortName(p.name)}</span>
             </div>`;
   }).join("");
@@ -360,9 +361,11 @@ function _wirePanZoom() {
 
   // Manual tap detection — replaces native "click" because pointer capture
   // (needed for reliable drag/pinch) makes native click unreliable across
-  // browsers/input devices (esp. trackpads on macOS).
-  let tapCandidate  = null;  // { pid, time }
-  let sessionMoved  = false;
+  // browsers/input devices. Move tolerance adapts to input type: touch
+  // gets more slack since fingertips are naturally less precise than a
+  // mouse/trackpad cursor.
+  let tapCandidate    = null;  // { pid, time, moveThreshold }
+  let sessionMoved    = false;
   let sessionWasMulti = false;
 
   function dist() {
@@ -381,7 +384,8 @@ function _wirePanZoom() {
       sessionMoved = false;
       sessionWasMulti = false;
       const nodeEl = e.target.closest(".tn-node");
-      tapCandidate = nodeEl ? { pid: nodeEl.dataset.pid, time: Date.now() } : null;
+      const moveThreshold = e.pointerType === "touch" ? TAP_MOVE_THRESHOLD_TOUCH : TAP_MOVE_THRESHOLD_MOUSE;
+      tapCandidate = nodeEl ? { pid: nodeEl.dataset.pid, time: Date.now(), moveThreshold } : null;
     } else if (pointers.size === 2) {
       lastDist = dist();
       dragStart = null;
@@ -396,7 +400,8 @@ function _wirePanZoom() {
 
     if (pointers.size === 1 && dragStart) {
       const dx = e.clientX - dragStart.x, dy = e.clientY - dragStart.y;
-      if (Math.hypot(dx, dy) > TAP_MOVE_THRESHOLD) sessionMoved = true;
+      const threshold = tapCandidate?.moveThreshold ?? TAP_MOVE_THRESHOLD_MOUSE;
+      if (Math.hypot(dx, dy) > threshold) sessionMoved = true;
       tx = dragStart.tx + dx;
       ty = dragStart.ty + dy;
       _applyTransform(false);
