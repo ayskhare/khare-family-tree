@@ -36,32 +36,9 @@
   <!-- Panels -->
   <div id="panels">
 
-    <!-- Tree panel -->
+    <!-- Tree panel: full pannable/zoomable genogram + in-tree search -->
     <div class="panel active" id="panel-tree">
       <div id="tree-canvas"></div>
-    </div>
-
-    <!-- Search panel -->
-    <div class="panel" id="panel-search">
-      <div class="search-bar-wrap">
-        <div class="search-bar" id="search-bar-el">
-          <span class="search-icon">🔍</span>
-          <input id="search-input" type="search" placeholder="Search by name or location…" autocomplete="off" autocorrect="off" spellcheck="false">
-          <button class="clear-btn" id="search-clear-btn" aria-label="Clear">✕</button>
-        </div>
-        <div class="search-filters">
-          <button class="filter-chip active" data-filter="all">All</button>
-          <button class="filter-chip" data-filter="blood">🩸 Khare</button>
-          <button class="filter-chip" data-filter="married">💍 Married in</button>
-          <button class="filter-chip" data-filter="deceased">🕊️ Deceased</button>
-        </div>
-      </div>
-      <div id="search-results-list">
-        <div class="search-hint">
-          <div class="hint-icon">🔍</div>
-          <p>Type a name, location, or generation<br>to find family members</p>
-        </div>
-      </div>
     </div>
 
     <!-- Dates panel -->
@@ -113,10 +90,6 @@
       <span class="tab-icon">🌳</span>
       <span>Tree</span>
     </button>
-    <button class="nav-tab" data-tab="search">
-      <span class="tab-icon">🔍</span>
-      <span>Search</span>
-    </button>
     <button class="nav-tab" data-tab="dates">
       <span class="tab-icon">🎂</span>
       <span>Dates</span>
@@ -134,6 +107,7 @@
 <div id="profile-sheet">
   <div class="sheet-handle"></div>
   <div class="sheet-header">
+    <button class="sheet-close-btn" id="sheet-close-btn" aria-label="Close">✕</button>
     <div class="sheet-name" id="sheet-name"></div>
     <div class="sheet-meta" id="sheet-meta"></div>
     <div class="sheet-badges" id="sheet-badges"></div>
