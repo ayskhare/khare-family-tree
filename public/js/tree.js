@@ -16,6 +16,9 @@ const BOTTOM_PAD    = 40;
 const MAX_SCALE      = 2.2;
 const FOCUS_ROWS     = 4.3; // rows visible at initial "focused" zoom (≈2 up + self + 1 down)
 
+const TAP_MOVE_THRESHOLD = 6;   // px — pointer movement above this = drag, not tap
+const TAP_TIME_THRESHOLD = 600; // ms — pointer held longer than this = not a tap
+
 // ─────────────────────────────────────────────────────
 // Module state
 // ─────────────────────────────────────────────────────
@@ -228,11 +231,12 @@ function _renderShell() {
     const cls = [
       "tn-node",
       p.blood_member ? "tn-blood" : "tn-married",
-      n.id === _homeId ? "tn-home" : "",
       p.is_alive === false ? "tn-deceased" : "",
     ].filter(Boolean).join(" ");
+    const homeBadge = n.id === _homeId ? `<span class="tn-home-badge" title="You">🏠</span>` : "";
     return `<div class="${cls}" data-pid="${n.id}" title="${cleanName(p.name)}"
               style="left:${n.cx - NODE_W/2}px; top:${n.top}px; width:${NODE_W}px; height:${NODE_H}px;">
+              ${homeBadge}
               <span class="tn-name">${shortName(p.name)}</span>
             </div>`;
   }).join("");
@@ -276,11 +280,6 @@ function _renderShell() {
   _viewportEl = document.getElementById("tree-viewport");
   _stageEl    = document.getElementById("tree-stage");
 
-  canvas.querySelector(".tree-nodes").addEventListener("click", e => {
-    const node = e.target.closest(".tn-node");
-    if (node) openSheet(node.dataset.pid);
-  });
-
   document.getElementById("tree-home-btn").addEventListener("click", () => {
     toggleTreeSearch(false);
     _resetView(true);
@@ -290,7 +289,7 @@ function _renderShell() {
 }
 
 // ─────────────────────────────────────────────────────
-// Pan & zoom controller
+// Pan & zoom controller (+ manual tap detection for opening profiles)
 // ─────────────────────────────────────────────────────
 function clamp(v, min, max) { return Math.min(max, Math.max(min, v)); }
 
@@ -359,6 +358,13 @@ function _wirePanZoom() {
   let dragStart = null;
   let lastDist  = null;
 
+  // Manual tap detection — replaces native "click" because pointer capture
+  // (needed for reliable drag/pinch) makes native click unreliable across
+  // browsers/input devices (esp. trackpads on macOS).
+  let tapCandidate  = null;  // { pid, time }
+  let sessionMoved  = false;
+  let sessionWasMulti = false;
+
   function dist() {
     const [a, b] = [...pointers.values()];
     return Math.hypot(a.x - b.x, a.y - b.y);
@@ -368,12 +374,19 @@ function _wirePanZoom() {
     vp.setPointerCapture(e.pointerId);
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     _stageEl.style.transition = "none";
+
     if (pointers.size === 1) {
       dragStart = { x: e.clientX, y: e.clientY, tx, ty };
       vp.classList.add("dragging");
+      sessionMoved = false;
+      sessionWasMulti = false;
+      const nodeEl = e.target.closest(".tn-node");
+      tapCandidate = nodeEl ? { pid: nodeEl.dataset.pid, time: Date.now() } : null;
     } else if (pointers.size === 2) {
       lastDist = dist();
       dragStart = null;
+      sessionWasMulti = true;
+      tapCandidate = null;
     }
   });
 
@@ -382,10 +395,13 @@ function _wirePanZoom() {
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
     if (pointers.size === 1 && dragStart) {
-      tx = dragStart.tx + (e.clientX - dragStart.x);
-      ty = dragStart.ty + (e.clientY - dragStart.y);
+      const dx = e.clientX - dragStart.x, dy = e.clientY - dragStart.y;
+      if (Math.hypot(dx, dy) > TAP_MOVE_THRESHOLD) sessionMoved = true;
+      tx = dragStart.tx + dx;
+      ty = dragStart.ty + dy;
       _applyTransform(false);
     } else if (pointers.size === 2) {
+      sessionWasMulti = true;
       const d = dist();
       const [p1, p2] = [...pointers.values()];
       const midX = (p1.x + p2.x) / 2, midY = (p1.y + p2.y) / 2;
@@ -395,14 +411,21 @@ function _wirePanZoom() {
   });
 
   function endPointer(e) {
+    const wasSingle = pointers.size === 1 && !sessionWasMulti;
     pointers.delete(e.pointerId);
     vp.classList.remove("dragging");
     if (pointers.size < 2) lastDist = null;
+
     if (pointers.size === 0) {
+      if (wasSingle && !sessionMoved && tapCandidate && (Date.now() - tapCandidate.time) < TAP_TIME_THRESHOLD) {
+        openSheet(tapCandidate.pid);
+      }
       dragStart = null;
+      tapCandidate = null;
     } else if (pointers.size === 1) {
       const [p] = [...pointers.values()];
       dragStart = { x: p.x, y: p.y, tx, ty };
+      tapCandidate = null; // a pinch was in progress — don't treat the remaining finger as a tap
     }
   }
   vp.addEventListener("pointerup", endPointer);
