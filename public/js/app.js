@@ -1,8 +1,6 @@
 // app.js — init, router, shared state
 import { fetchAll } from "./api.js";
-import { showToast } from "./utils.js";
-import { initTree } from "./tree.js";
-import { initSearch } from "./search.js";
+import { initTree, toggleTreeSearch } from "./tree.js";
 import { initDates } from "./dates.js";
 import { initMatch } from "./match.js";
 
@@ -33,7 +31,7 @@ export function getChildren(id) {
 
 
 // ── Router / Tab switching ─────────────────────────────
-const TABS = ["tree", "search", "dates", "match"];
+const TABS = ["tree", "dates", "match"];
 let _activeTab = "tree";
 
 export function switchTab(tabId) {
@@ -50,7 +48,6 @@ export function switchTab(tabId) {
   // Lazily render dates/match on first show
   if (tabId === "dates")  window._datesReady  || (initDates(),  window._datesReady  = true);
   if (tabId === "match")  window._matchReady  || (initMatch(),  window._matchReady  = true);
-  if (tabId === "search") document.getElementById("search-input")?.focus();
 }
 
 // ── Init ──────────────────────────────────────────────
@@ -64,14 +61,16 @@ async function init() {
 
     // Boot modules
     initTree();
-    initSearch();
 
     // Wire bottom nav
     document.querySelectorAll(".nav-tab").forEach(btn => {
       btn.addEventListener("click", () => switchTab(btn.dataset.tab));
     });
-    // Header search button → jump to search tab
-    document.getElementById("header-search-btn")?.addEventListener("click", () => switchTab("search"));
+    // Header search button → switch to Tree tab and open the in-tree search overlay
+    document.getElementById("header-search-btn")?.addEventListener("click", () => {
+      switchTab("tree");
+      toggleTreeSearch();
+    });
 
     // Dismiss loading screen
     const ls = document.getElementById("loading-screen");
